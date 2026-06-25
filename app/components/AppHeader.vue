@@ -1,5 +1,5 @@
 <template>
-  <v-app-bar flat>
+  <v-app-bar>
     <v-app-bar-nav-icon @click="$emit('toggle-drawer')" />
     <v-app-bar-title>{{ title }}</v-app-bar-title>
     <v-spacer />
@@ -42,6 +42,6 @@ function toggleTheme() {
 
 async function handleLogout() {
   await logout()
-  await navigateTo('/login')
+  await navigateTo('/')
 }
 </script>

@@ -1,7 +1,7 @@
 import type { LoginCredentials } from '~/types'
 
 export function useAuth() {
-  const { user, loggedIn, login: sessionLogin, logout: sessionLogout, fetch } = useUserSession()
+  const { user, loggedIn, clear, fetch } = useUserSession()
 
   async function login(credentials: LoginCredentials) {
     await $fetch('/api/login', {
@@ -12,7 +12,7 @@ export function useAuth() {
   }
 
   async function logout() {
-    await sessionLogout()
+    await clear()
   }
 
   return { user, loggedIn, login, logout }

@@ -1,0 +1,24 @@
+{
+  "name": "workshop",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "@nuxtjs/color-mode": "^4.0.1",
+    "@pinia/nuxt": "^0.11.3",
+    "chart.js": "^4.5.1",
+    "nuxt": "^4.4.8",
+    "nuxt-auth-utils": "^0.5.29",
+    "vue": "^3.5.38",
+    "vue-chartjs": "^5.3.3",
+    "vue-router": "^5.1.0",
+    "vuetify": "^4.1.2",
+    "vuetify-nuxt-module": "^1.0.0-rc.1"
+  }
+}

@@ -22,7 +22,7 @@
     </v-col>
 
     <v-col cols="12" md="7" class="d-flex align-center justify-center form-panel pa-4 pa-md-8">
-      <div v-if="success" :class="['form-wrapper', 'w-100', { visible: showForm }]" style="max-width: 420px;">
+      <div v-if="success" class="form-wrapper w-100" style="max-width: 420px;">
         <div class="text-center">
           <v-icon size="64" color="success" class="mb-4">mdi-email-check-outline</v-icon>
           <h1 class="text-h4 font-weight-bold mb-2">Check your email</h1>
@@ -44,7 +44,7 @@
         </div>
       </div>
 
-      <div v-else :class="['form-wrapper', 'w-100', { visible: showForm }]" style="max-width: 420px;">
+      <div v-else class="form-wrapper w-100" style="max-width: 420px;">
         <div class="text-center text-md-start mb-6">
           <h1 class="text-h4 font-weight-bold mb-1">Create an account</h1>
           <p class="text-body-2 text-grey">Get started with your free account</p>
@@ -163,9 +163,11 @@
 </template>
 
 <script setup lang="ts">
+import type { VForm } from 'vuetify/components'
+
 definePageMeta({ layout: 'default' })
 
-const supabase = useSupabaseClient()
+const { signUp, user } = useAuth()
 
 const fullName = ref('')
 const email = ref('')
@@ -177,8 +179,11 @@ const loading = ref(false)
 const success = ref(false)
 const showPassword = ref(false)
 const showConfirmPassword = ref(false)
-const showForm = ref(false)
 const formRef = ref<VForm>()
+
+if (user.value) {
+  await navigateTo('/dashboard')
+}
 
 const nameRules = [
   (v: string) => !!v?.trim() || 'Name is required',
@@ -205,10 +210,6 @@ const confirmRules = [
   (v: string) => v === password.value || 'Passwords do not match',
 ]
 
-onMounted(() => {
-  showForm.value = true
-})
-
 async function handleSignup() {
   const { valid } = await formRef.value?.validate() ?? { valid: false }
   if (!valid) return
@@ -216,15 +217,12 @@ async function handleSignup() {
   loading.value = true
   error.value = ''
   try {
-    const { error: signupError } = await supabase.auth.signUp({
-      email: email.value,
-      password: password.value,
-      options: {
-        data: { full_name: fullName.value.trim() },
-      },
-    })
-    if (signupError) throw signupError
-    success.value = true
+    const data = await signUp(email.value, password.value, { full_name: fullName.value.trim() })
+    if (data?.session) {
+      await navigateTo('/dashboard')
+    } else {
+      success.value = true
+    }
   } catch (err: any) {
     error.value = err?.message || 'Signup failed. Please try again.'
   } finally {
@@ -244,17 +242,6 @@ async function handleSignup() {
 
 .form-panel {
   background: rgb(var(--v-theme-surface));
-}
-
-.form-wrapper {
-  opacity: 0;
-  transform: translateY(20px);
-  transition: opacity 0.5s ease, transform 0.5s ease;
-}
-
-.form-wrapper.visible {
-  opacity: 1;
-  transform: translateY(0);
 }
 
 .submit-btn {

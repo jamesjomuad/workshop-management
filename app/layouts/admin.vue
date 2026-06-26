@@ -17,7 +17,7 @@
         />
         <v-divider />
       </template>
-      <SidebarNav />
+      <SidebarNav :rail="rail && !isMobile" />
       <template #append>
         <v-divider />
         <v-list-item

@@ -11,22 +11,24 @@ export default defineNuxtConfig({
     preference: 'light',
   },
   vuetify: {
-    theme: {
-      themes: {
-        light: {
-          colors: {
-            primary: '#F59E0B',
-            secondary: '#0D9488',
-            navy: '#1B2A4A',
-            charcoal: '#2D3436',
+    vuetifyOptions: {
+      theme: {
+        themes: {
+          light: {
+            colors: {
+              primary: '#F59E0B',
+              secondary: '#0D9488',
+              navy: '#1B2A4A',
+              charcoal: '#2D3436',
+            },
           },
-        },
-        dark: {
-          colors: {
-            primary: '#FBBF24',
-            secondary: '#2DD4BF',
-            navy: '#0F172A',
-            charcoal: '#1E1E1E',
+          dark: {
+            colors: {
+              primary: '#FBBF24',
+              secondary: '#2DD4BF',
+              navy: '#0F172A',
+              charcoal: '#1E1E1E',
+            },
           },
         },
       },
@@ -39,11 +41,6 @@ export default defineNuxtConfig({
       exclude: ['/', '/login', '/signup', '/about', '/venues/**', '/confirm', '/dashboard', '/users', '/settings']
     },
     types: false
-  },
-  vite: {
-    optimizeDeps: {
-      include: ['cookie']
-    }
   },
   app: {
     pageTransition: { name: 'page', mode: 'out-in' },

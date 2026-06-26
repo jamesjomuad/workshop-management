@@ -55,10 +55,18 @@
             autocomplete="current-password"
           />
 
-          <div class="d-flex align-center justify-space-between mb-4">
-            <v-checkbox v-model="remember" label="Remember me" density="compact" hide-details color="primary" />
-            <a href="#" class="text-caption text-primary font-weight-medium text-decoration-none">Forgot password?</a>
+          <div class="d-flex align-center justify-end mb-4">
+            <a
+              href="#"
+              class="text-caption text-primary font-weight-medium text-decoration-none"
+              @click.prevent="handleForgotPassword"
+              :disabled="resetting"
+            >{{ resetting ? 'Sending...' : 'Forgot password?' }}</a>
           </div>
+
+          <v-alert v-if="success" type="success" density="compact" dismissible class="mb-4" @click:close="success = ''">
+            {{ success }}
+          </v-alert>
 
           <v-alert v-if="error" type="error" density="compact" dismissible class="mb-4" @click:close="error = ''">
             {{ error }}
@@ -89,15 +97,16 @@
 <script setup lang="ts">
 definePageMeta({ layout: 'default' })
 
-const { login, loggedIn } = useAuth()
+const { user, login, resetPassword } = useAuth()
 
 const email = ref('')
 const password = ref('')
-const remember = ref(false)
 const error = ref('')
+const success = ref('')
 const loading = ref(false)
+const resetting = ref(false)
 const showPassword = ref(false)
-const showForm = ref(false)
+const showForm = ref(true)
 const formRef = ref<VForm>()
 
 const emailRules = [
@@ -106,13 +115,9 @@ const emailRules = [
 ]
 const requiredRules = [(v: string) => !!v || 'Password is required']
 
-if (loggedIn.value) {
+if (user.value) {
   await navigateTo('/dashboard')
 }
-
-onMounted(() => {
-  showForm.value = true
-})
 
 async function handleLogin() {
   const { valid } = await formRef.value?.validate() ?? { valid: false }
@@ -120,13 +125,33 @@ async function handleLogin() {
 
   loading.value = true
   error.value = ''
+  success.value = ''
   try {
     await login({ email: email.value, password: password.value })
     await navigateTo('/dashboard')
-  } catch {
-    error.value = 'Invalid email or password. Please try again.'
+  } catch (err: any) {
+    error.value = err?.message || 'Invalid email or password. Please try again.'
   } finally {
     loading.value = false
+  }
+}
+
+async function handleForgotPassword() {
+  if (!email.value) {
+    error.value = 'Enter your email address first.'
+    return
+  }
+
+  resetting.value = true
+  error.value = ''
+  success.value = ''
+  try {
+    await resetPassword(email.value)
+    success.value = 'Check your email for a password reset link.'
+  } catch (err: any) {
+    error.value = err?.message || 'Failed to send reset email.'
+  } finally {
+    resetting.value = false
   }
 }
 </script>

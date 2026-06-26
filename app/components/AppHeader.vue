@@ -42,6 +42,6 @@ function toggleTheme() {
 
 async function handleLogout() {
   await logout()
-  await navigateTo('/')
+  await navigateTo('/login')
 }
 </script>

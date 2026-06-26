@@ -2,13 +2,48 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
   modules: [
-    'nuxt-auth-utils',
     'vuetify-nuxt-module',
     '@pinia/nuxt',
     '@nuxtjs/color-mode',
+    '@nuxtjs/supabase',
   ],
   colorMode: {
     preference: 'light',
+  },
+  vuetify: {
+    theme: {
+      themes: {
+        light: {
+          colors: {
+            primary: '#F59E0B',
+            secondary: '#0D9488',
+            navy: '#1B2A4A',
+            charcoal: '#2D3436',
+          },
+        },
+        dark: {
+          colors: {
+            primary: '#FBBF24',
+            secondary: '#2DD4BF',
+            navy: '#0F172A',
+            charcoal: '#1E1E1E',
+          },
+        },
+      },
+    },
+  },
+  supabase: {
+    redirectOptions: {
+      login: '/login',
+      callback: '/confirm',
+      exclude: ['/', '/login', '/signup', '/about', '/venues/**', '/confirm', '/dashboard', '/users', '/settings']
+    },
+    types: false
+  },
+  vite: {
+    optimizeDeps: {
+      include: ['cookie']
+    }
   },
   app: {
     pageTransition: { name: 'page', mode: 'out-in' },

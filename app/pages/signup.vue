@@ -22,13 +22,47 @@
     </v-col>
 
     <v-col cols="12" md="7" class="d-flex align-center justify-center form-panel pa-4 pa-md-8">
-      <div :class="['form-wrapper', 'w-100', { visible: showForm }]" style="max-width: 420px;">
+      <div v-if="success" :class="['form-wrapper', 'w-100', { visible: showForm }]" style="max-width: 420px;">
+        <div class="text-center">
+          <v-icon size="64" color="success" class="mb-4">mdi-email-check-outline</v-icon>
+          <h1 class="text-h4 font-weight-bold mb-2">Check your email</h1>
+          <p class="text-body-2 text-grey mb-6">
+            We sent a confirmation link to <strong>{{ email }}</strong>.<br>
+            Click the link to activate your account.
+          </p>
+          <v-btn
+            color="primary"
+            size="large"
+            block
+            rounded="lg"
+            variant="outlined"
+            class="text-none"
+            @click="navigateTo('/login')"
+          >
+            Back to Sign In
+          </v-btn>
+        </div>
+      </div>
+
+      <div v-else :class="['form-wrapper', 'w-100', { visible: showForm }]" style="max-width: 420px;">
         <div class="text-center text-md-start mb-6">
-          <h1 class="text-h4 font-weight-bold mb-1">Welcome back</h1>
-          <p class="text-body-2 text-grey">Sign in to your account to continue</p>
+          <h1 class="text-h4 font-weight-bold mb-1">Create an account</h1>
+          <p class="text-body-2 text-grey">Get started with your free account</p>
         </div>
 
-        <v-form ref="formRef" @submit.prevent="handleLogin">
+        <v-form ref="formRef" @submit.prevent="handleSignup">
+          <v-text-field
+            v-model="fullName"
+            label="Full name"
+            type="text"
+            prepend-inner-icon="mdi-account-outline"
+            :rules="nameRules"
+            variant="outlined"
+            density="comfortable"
+            class="mb-2"
+            autocomplete="name"
+          />
+
           <v-text-field
             v-model="email"
             label="Email address"
@@ -48,17 +82,59 @@
             prepend-inner-icon="mdi-lock-outline"
             :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
             @click:append-inner="showPassword = !showPassword"
-            :rules="requiredRules"
+            :rules="passwordRules"
+            variant="outlined"
+            density="comfortable"
+            class="mb-1"
+            autocomplete="new-password"
+          />
+
+          <div class="d-flex flex-wrap ga-2 mb-2">
+            <v-chip
+              v-for="rule in passwordHints"
+              :key="rule.label"
+              size="x-small"
+              :color="rule.passed ? 'success' : 'default'"
+              :variant="rule.passed ? 'tonal' : 'outlined'"
+              label
+              class="text-caption"
+            >
+              <v-icon start size="12">{{ rule.passed ? 'mdi-check-circle' : 'mdi-circle-outline' }}</v-icon>
+              {{ rule.label }}
+            </v-chip>
+          </div>
+
+          <v-text-field
+            v-model="confirmPassword"
+            label="Confirm password"
+            :type="showConfirmPassword ? 'text' : 'password'"
+            prepend-inner-icon="mdi-lock-outline"
+            :append-inner-icon="showConfirmPassword ? 'mdi-eye-off' : 'mdi-eye'"
+            @click:append-inner="showConfirmPassword = !showConfirmPassword"
+            :rules="confirmRules"
             variant="outlined"
             density="comfortable"
             class="mb-2"
-            autocomplete="current-password"
+            autocomplete="new-password"
           />
 
-          <div class="d-flex align-center justify-space-between mb-4">
-            <v-checkbox v-model="remember" label="Remember me" density="compact" hide-details color="primary" />
-            <a href="#" class="text-caption text-primary font-weight-medium text-decoration-none">Forgot password?</a>
-          </div>
+          <v-checkbox
+            v-model="agreedToTerms"
+            :rules="[(v: boolean) => !!v || 'You must agree to continue']"
+            density="compact"
+            color="primary"
+            class="mb-2"
+            hide-details="auto"
+          >
+            <template #label>
+              <span class="text-caption text-grey">
+                I agree to the
+                <a href="#" class="text-primary font-weight-medium text-decoration-none">Terms of Service</a>
+                and
+                <a href="#" class="text-primary font-weight-medium text-decoration-none">Privacy Policy</a>
+              </span>
+            </template>
+          </v-checkbox>
 
           <v-alert v-if="error" type="error" density="compact" dismissible class="mb-4" @click:close="error = ''">
             {{ error }}
@@ -73,13 +149,13 @@
             :loading="loading"
             class="submit-btn"
           >
-            Sign In
+            Create Account
           </v-btn>
         </v-form>
 
         <p class="text-center text-body-2 text-grey mt-6">
-          Don't have an account?
-          <NuxtLink to="/signup" class="text-primary font-weight-medium text-decoration-none">Sign up</NuxtLink>
+          Already have an account?
+          <NuxtLink to="/login" class="text-primary font-weight-medium text-decoration-none">Log in</NuxtLink>
         </p>
       </div>
     </v-col>
@@ -89,42 +165,68 @@
 <script setup lang="ts">
 definePageMeta({ layout: 'default' })
 
-const { login, loggedIn } = useAuth()
+const supabase = useSupabaseClient()
 
+const fullName = ref('')
 const email = ref('')
 const password = ref('')
-const remember = ref(false)
+const confirmPassword = ref('')
+const agreedToTerms = ref(false)
 const error = ref('')
 const loading = ref(false)
+const success = ref(false)
 const showPassword = ref(false)
+const showConfirmPassword = ref(false)
 const showForm = ref(false)
 const formRef = ref<VForm>()
+
+const nameRules = [
+  (v: string) => !!v?.trim() || 'Name is required',
+  (v: string) => v?.trim().length >= 2 || 'Name must be at least 2 characters',
+]
 
 const emailRules = [
   (v: string) => !!v || 'Email is required',
   (v: string) => /.+@.+/.test(v) || 'Enter a valid email',
 ]
-const requiredRules = [(v: string) => !!v || 'Password is required']
 
-if (loggedIn.value) {
-  await navigateTo('/dashboard')
-}
+const passwordRules = [
+  (v: string) => !!v || 'Password is required',
+]
+
+const passwordHints = computed(() => [
+  { label: 'At least 8 characters', passed: password.value.length >= 8 },
+  { label: 'Contains a number', passed: /\d/.test(password.value) },
+  { label: 'Contains a letter', passed: /[a-zA-Z]/.test(password.value) },
+])
+
+const confirmRules = [
+  (v: string) => !!v || 'Please confirm your password',
+  (v: string) => v === password.value || 'Passwords do not match',
+]
 
 onMounted(() => {
   showForm.value = true
 })
 
-async function handleLogin() {
+async function handleSignup() {
   const { valid } = await formRef.value?.validate() ?? { valid: false }
   if (!valid) return
 
   loading.value = true
   error.value = ''
   try {
-    await login({ email: email.value, password: password.value })
-    await navigateTo('/dashboard')
-  } catch {
-    error.value = 'Invalid email or password. Please try again.'
+    const { error: signupError } = await supabase.auth.signUp({
+      email: email.value,
+      password: password.value,
+      options: {
+        data: { full_name: fullName.value.trim() },
+      },
+    })
+    if (signupError) throw signupError
+    success.value = true
+  } catch (err: any) {
+    error.value = err?.message || 'Signup failed. Please try again.'
   } finally {
     loading.value = false
   }

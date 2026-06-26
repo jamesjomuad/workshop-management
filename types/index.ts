@@ -27,10 +27,33 @@ export interface LoginCredentials {
   password: string
 }
 
-export interface LoginResponse {
-  user: {
-    name: string
-    email: string
-    avatar: string
-  }
+export interface Venue {
+  id: number
+  name: string
+  hotel: string
+  location: string
+  capacity: number
+  pricePerDay: number
+  rating: number
+  reviewCount: number
+  image: string
+  amenities: string[]
+  eventType: string
+}
+
+export interface EventType {
+  id: string
+  name: string
+  icon: string
+  description: string
+}
+
+export interface Testimonial {
+  id: number
+  name: string
+  avatar: string
+  title: string
+  company: string
+  quote: string
+  rating: number
 }

@@ -1,77 +1,73 @@
 <template>
-  <v-container class="fill-height d-flex align-center justify-center">
-    <v-card class="pa-6" width="400" elevation="4" rounded="lg">
-      <v-card-title class="text-h5 text-center mb-4">Sign In</v-card-title>
-      <v-card-text>
-        <v-form ref="formRef" @submit.prevent="handleLogin">
-          <v-text-field
-            v-model="email"
-            label="Email"
-            type="email"
-            prepend-inner-icon="mdi-email"
-            :rules="emailRules"
-            required
-          />
-          <v-text-field
-            v-model="password"
-            label="Password"
-            type="password"
-            prepend-inner-icon="mdi-lock"
-            :rules="requiredRules"
-            required
-          />
-          <v-alert v-if="error" type="error" density="compact" class="mb-3">{{ error }}</v-alert>
-          <v-btn type="submit" color="primary" block :loading="loading">Sign In</v-btn>
-        </v-form>
-      </v-card-text>
-      <v-card-text class="text-caption text-center text-grey">
-        Demo: admin@example.com / password
-      </v-card-text>
-    </v-card>
-  </v-container>
+  <div>
+    <HeroSection />
+
+    <v-container v-if="eventTypes.length" id="event-types">
+      <AnimatedSection>
+        <EventTypeGrid :event-types="eventTypes" @select="selectedEventType = $event" />
+      </AnimatedSection>
+    </v-container>
+
+    <section class="bg-surface-alt">
+      <v-container id="venues" class="py-12 py-md-16">
+        <AnimatedSection>
+          <div class="text-center mb-8">
+            <h2 class="text-h4 font-weight-bold mb-2" style="color: rgb(var(--v-theme-navy));">Featured Venues</h2>
+            <p class="text-body-1 text-medium-emphasis mb-6">Curated spaces for your next event</p>
+            <v-text-field
+              v-model="searchQuery"
+              prepend-inner-icon="mdi-magnify"
+              placeholder="Search by venue, hotel, or location..."
+              variant="outlined"
+              density="comfortable"
+              hide-details
+              rounded="lg"
+              class="mx-auto"
+              style="max-width: 480px;"
+              clearable
+            />
+          </div>
+          <v-row>
+            <v-col v-for="v in filteredVenues" :key="v.id" cols="12" sm="6" lg="4">
+              <VenueCard :venue="v" />
+            </v-col>
+          </v-row>
+          <div v-if="!filteredVenues.length && !pending" class="text-center py-10">
+            <v-icon size="48" color="grey-lighten-1" class="mb-3">mdi-file-search-outline</v-icon>
+            <p class="text-body-1 text-grey">No venues match your search. Try a different term.</p>
+          </div>
+        </AnimatedSection>
+      </v-container>
+    </section>
+
+    <section class="bg-surface-alt">
+      <v-container>
+        <AnimatedSection>
+          <HowItWorks />
+        </AnimatedSection>
+      </v-container>
+    </section>
+
+    <v-container v-if="testimonials.length">
+      <AnimatedSection>
+        <TestimonialCarousel :testimonials="testimonials" />
+      </AnimatedSection>
+    </v-container>
+
+    <AnimatedSection>
+      <HotelCTA />
+    </AnimatedSection>
+
+    <AppFooter />
+  </div>
 </template>
 
 <script setup lang="ts">
-definePageMeta({ layout: 'default' })
-
-const { login, loggedIn } = useAuth()
-const router = useRouter()
-
-const email = ref('')
-const password = ref('')
-const error = ref('')
-const loading = ref(false)
-const formRef = ref()
-
-const emailRules = [
-  (v: string) => !!v || 'Email is required',
-  (v: string) => /.+@.+/.test(v) || 'Email must be valid',
-]
-const requiredRules = [(v: string) => !!v || 'Required']
-
-if (loggedIn.value) {
-  await router.push('/dashboard')
-}
-
-async function handleLogin() {
-  const { valid } = await formRef.value?.validate()
-  if (!valid) return
-
-  loading.value = true
-  error.value = ''
-  try {
-    await login({ email: email.value, password: password.value })
-    await router.push('/dashboard')
-  } catch {
-    error.value = 'Invalid email or password'
-  } finally {
-    loading.value = false
-  }
-}
+const { searchQuery, selectedEventType, filteredVenues, eventTypes, testimonials, pending } = useVenues()
 </script>
 
-<style scoped>
-.fill-height {
-  min-height: 100vh;
+<style>
+.bg-surface-alt {
+  background: rgba(var(--v-theme-navy), 0.02);
 }
 </style>

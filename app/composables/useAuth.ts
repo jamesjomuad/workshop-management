@@ -1,18 +1,22 @@
 import type { LoginCredentials } from '~/types'
 
 export function useAuth() {
-  const { user, loggedIn, clear, fetch } = useUserSession()
+  const supabase = useSupabaseClient()
+  const user = useSupabaseUser()
+
+  const loggedIn = computed(() => user.value !== null)
 
   async function login(credentials: LoginCredentials) {
-    await $fetch('/api/login', {
-      method: 'POST',
-      body: credentials,
+    const { error } = await supabase.auth.signInWithPassword({
+      email: credentials.email,
+      password: credentials.password,
     })
-    await fetch()
+    if (error) throw error
   }
 
   async function logout() {
-    await clear()
+    const { error } = await supabase.auth.signOut()
+    if (error) throw error
   }
 
   return { user, loggedIn, login, logout }

@@ -7,6 +7,13 @@ export default defineNuxtConfig({
     '@nuxtjs/color-mode',
     '@nuxtjs/supabase',
   ],
+  vite: {
+    resolve: {
+      alias: {
+        'cookie': 'cookie/dist/index.js'
+      }
+    }
+  },
   colorMode: {
     preference: 'light',
   },

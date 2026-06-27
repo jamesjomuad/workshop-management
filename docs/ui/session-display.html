@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Session Display</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy:    #0D1B2A;
+    --ink:     #1A2D42;
+    --gold:    #C9A84C;
+    --gold-lt: #E8C96A;
+    --cream:   #F5F0E8;
+    --mist:    #E2DDD5;
+    --steel:   #7B8FA1;
+    --white:   #FFFFFF;
+    --green:   #2EAD72;
+    --red:     #D94F4F;
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    background: var(--navy);
+    color: var(--cream);
+    font-family: 'DM Sans', sans-serif;
+    overflow: hidden;
+  }
+
+  /* ── Layout ── */
+  .screen {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    height: 100vh;
+    padding: 48px 64px 36px;
+    gap: 0;
+    position: relative;
+  }
+
+  /* ── Gold accent bar ── */
+  .screen::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 8px;
+    background: linear-gradient(180deg, var(--gold) 0%, var(--gold-lt) 50%, var(--gold) 100%);
+  }
+
+  /* ── Header ── */
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding-bottom: 36px;
+    border-bottom: 1px solid rgba(201,168,76,0.25);
+  }
+
+  .org-block .eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 6px;
+  }
+
+  .org-block .org-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--white);
+    letter-spacing: 0.01em;
+  }
+
+  .clock-block {
+    text-align: right;
+  }
+
+  .clock-block .time {
+    font-family: 'DM Mono', monospace;
+    font-size: 48px;
+    font-weight: 500;
+    color: var(--white);
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+
+  .clock-block .date {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--steel);
+    margin-top: 6px;
+    letter-spacing: 0.05em;
+  }
+
+  /* ── Main ── */
+  main {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 48px;
+    padding: 40px 0;
+    align-items: start;
+  }
+
+  /* ── Session info ── */
+  .session-info {}
+
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(46,173,114,0.15);
+    border: 1px solid rgba(46,173,114,0.4);
+    border-radius: 100px;
+    padding: 6px 16px;
+    margin-bottom: 24px;
+  }
+
+  .status-pill .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  .status-pill span {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--green);
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .course-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(36px, 4vw, 64px);
+    font-weight: 900;
+    line-height: 1.08;
+    color: var(--white);
+    margin-bottom: 20px;
+    max-width: 720px;
+  }
+
+  .program-tag {
+    display: inline-block;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--gold);
+    border: 1px solid rgba(201,168,76,0.35);
+    border-radius: 4px;
+    padding: 4px 12px;
+    margin-bottom: 40px;
+  }
+
+  .meta-grid {
+    display: grid;
+    grid-template-columns: repeat(3, auto);
+    gap: 40px;
+    width: fit-content;
+  }
+
+  .meta-item .label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--steel);
+    margin-bottom: 8px;
+  }
+
+  .meta-item .value {
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--cream);
+    line-height: 1.3;
+  }
+
+  .meta-item .value.highlight {
+    color: var(--gold-lt);
+    font-size: 22px;
+    font-weight: 700;
+  }
+
+  /* ── People card ── */
+  .people-card {
+    background: var(--ink);
+    border: 1px solid rgba(201,168,76,0.15);
+    border-radius: 16px;
+    padding: 32px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+  }
+
+  .person-row .role-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 8px;
+  }
+
+  .person-row .name {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--white);
+  }
+
+  .person-row .sub {
+    font-size: 13px;
+    color: var(--steel);
+    margin-top: 2px;
+  }
+
+  .divider {
+    height: 1px;
+    background: rgba(255,255,255,0.07);
+  }
+
+  /* ── Schedule strip ── */
+  .schedule-strip {
+    border-top: 1px solid rgba(201,168,76,0.2);
+    padding-top: 28px;
+    display: flex;
+    gap: 0;
+    overflow: hidden;
+  }
+
+  .schedule-item {
+    flex: 1;
+    padding: 0 24px 0 0;
+    border-right: 1px solid rgba(255,255,255,0.08);
+    margin-right: 24px;
+  }
+
+  .schedule-item:last-child {
+    border-right: none;
+    margin-right: 0;
+  }
+
+  .schedule-item .s-time {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--gold);
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+  }
+
+  .schedule-item .s-label {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--cream);
+    margin-bottom: 2px;
+  }
+
+  .schedule-item .s-sub {
+    font-size: 12px;
+    color: var(--steel);
+  }
+
+  .schedule-item.active .s-label {
+    color: var(--gold-lt);
+  }
+
+  .schedule-item.active .s-time {
+    color: var(--green);
+  }
+
+  /* ── Footer ── */
+  footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .venue-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .venue-icon {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: rgba(201,168,76,0.12);
+    border: 1px solid rgba(201,168,76,0.3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+
+  .venue-text .v-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--cream);
+  }
+
+  .venue-text .v-room {
+    font-size: 12px;
+    color: var(--steel);
+    margin-top: 1px;
+  }
+
+  .refresh-indicator {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--steel);
+    letter-spacing: 0.08em;
+  }
+
+  /* ── Loading / Error states ── */
+  .state-overlay {
+    position: fixed; inset: 0;
+    background: var(--navy);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    z-index: 10;
+  }
+
+  .state-overlay.hidden { display: none; }
+
+  .spinner {
+    width: 40px; height: 40px;
+    border: 3px solid rgba(201,168,76,0.2);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .state-overlay p {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--steel);
+    letter-spacing: 0.1em;
+  }
+
+  .error-msg {
+    color: var(--red);
+    font-size: 13px;
+    font-family: 'DM Mono', monospace;
+    text-align: center;
+    max-width: 400px;
+  }
+</style>
+</head>
+<body>
+
+<!-- Loading overlay -->
+<div class="state-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <p>Loading session...</p>
+</div>
+
+<!-- Error overlay -->
+<div class="state-overlay hidden" id="errorOverlay">
+  <p style="font-size:32px">⚠️</p>
+  <p class="error-msg" id="errorMsg">Unable to load session data.</p>
+  <p style="font-size:11px;color:#4a5568;font-family:'DM Mono',monospace;margin-top:8px;">Retrying automatically…</p>
+</div>
+
+<!-- Main screen -->
+<div class="screen" id="mainScreen" style="display:none;">
+
+  <header>
+    <div class="org-block">
+      <div class="eyebrow">Training Management System</div>
+      <div class="org-name" id="orgName">Organization Name</div>
+    </div>
+    <div class="clock-block">
+      <div class="time" id="clock">00:00</div>
+      <div class="date" id="dateDisplay">—</div>
+    </div>
+  </header>
+
+  <main>
+    <div class="session-info">
+      <div class="status-pill">
+        <div class="dot"></div>
+        <span id="sessionStatus">In Progress</span>
+      </div>
+
+      <div class="course-title" id="courseTitle">Course Title</div>
+      <div class="program-tag" id="programTag">Program Name</div>
+
+      <div class="meta-grid">
+        <div class="meta-item">
+          <div class="label">Time</div>
+          <div class="value highlight" id="sessionTime">08:00 – 17:00</div>
+        </div>
+        <div class="meta-item">
+          <div class="label">Day</div>
+          <div class="value" id="sessionDay">Day 1 of 2</div>
+        </div>
+        <div class="meta-item">
+          <div class="label">Enrolled</div>
+          <div class="value" id="enrolledCount">— participants</div>
+        </div>
+      </div>
+
+      <!-- Today's schedule -->
+      <div class="schedule-strip" id="scheduleStrip" style="margin-top:40px;"></div>
+    </div>
+
+    <!-- People card -->
+    <div class="people-card">
+      <div class="person-row">
+        <div class="role-label">Trainer</div>
+        <div class="name" id="trainerName">—</div>
+        <div class="sub" id="trainerSub"></div>
+      </div>
+      <div class="divider"></div>
+      <div class="person-row">
+        <div class="role-label">Facilitator</div>
+        <div class="name" id="facilitatorName">—</div>
+        <div class="sub" id="facilitatorSub"></div>
+      </div>
+      <div class="divider"></div>
+      <div class="person-row">
+        <div class="role-label">Organized by</div>
+        <div class="name" id="clientName">—</div>
+        <div class="sub" id="clientSub"></div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="venue-info">
+      <div class="venue-icon">🏨</div>
+      <div class="venue-text">
+        <div class="v-name" id="venueName">Venue Name</div>
+        <div class="v-room" id="venueRoom">Room / Hall</div>
+      </div>
+    </div>
+    <div class="refresh-indicator" id="refreshIndicator">Last updated: —</div>
+  </footer>
+
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+// CONFIG — replace with your actual values
+// ─────────────────────────────────────────────
+const SUPABASE_URL = 'https://YOUR_PROJECT.supabase.co';
+const SUPABASE_ANON_KEY = 'YOUR_ANON_KEY';
+
+// Session ID comes from the URL: ?session=UUID
+// e.g. https://yourdomain.com/display?session=abc-123
+const params = new URLSearchParams(window.location.search);
+const SESSION_ID = params.get('session') || 'DEMO';
+
+const REFRESH_INTERVAL_MS = 30_000; // auto-refresh every 30s
+
+// ─────────────────────────────────────────────
+// DEMO DATA (used when SESSION_ID === 'DEMO')
+// ─────────────────────────────────────────────
+const DEMO = {
+  org_name: 'Apex Training Solutions',
+  course_title: 'Advanced Project Management & Leadership',
+  program_name: 'Professional Development Series',
+  status: 'ongoing',
+  time_start: '08:00',
+  time_end: '17:00',
+  day_current: 1,
+  day_total: 2,
+  enrolled_count: 24,
+  trainer_name: 'Maria Santos',
+  trainer_title: 'PMP, Senior Consultant',
+  facilitator_name: 'Rico Dela Cruz',
+  facilitator_title: 'On-site Coordinator',
+  client_name: 'Pacific Corp Philippines',
+  client_department: 'Human Resources',
+  venue_name: 'Seda Hotel BGC',
+  venue_room: 'Ballroom B, 3rd Floor',
+  agenda: [
+    { time: '08:00', label: 'Registration & Welcome', sub: '', active: false },
+    { time: '09:00', label: 'Module 1 — Strategy', sub: 'Workshop + Discussion', active: false },
+    { time: '11:00', label: 'Module 2 — Execution', sub: 'Case Studies', active: true },
+    { time: '13:00', label: 'Lunch Break', sub: '', active: false },
+    { time: '14:00', label: 'Module 3 — Leadership', sub: 'Group Activity', active: false },
+    { time: '16:30', label: 'Wrap-up & Q&A', sub: '', active: false },
+  ]
+};
+
+// ─────────────────────────────────────────────
+// CLOCK
+// ─────────────────────────────────────────────
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent =
+    now.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit', hour12: false });
+  document.getElementById('dateDisplay').textContent =
+    now.toLocaleDateString('en-PH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }).toUpperCase();
+}
+
+setInterval(updateClock, 1000);
+updateClock();
+
+// ─────────────────────────────────────────────
+// RENDER
+// ─────────────────────────────────────────────
+function statusLabel(s) {
+  return { ongoing: 'In Progress', upcoming: 'Starting Soon', completed: 'Completed', cancelled: 'Cancelled' }[s] || s;
+}
+
+function statusColor(s) {
+  return { ongoing: '#2EAD72', upcoming: '#C9A84C', completed: '#7B8FA1', cancelled: '#D94F4F' }[s] || '#7B8FA1';
+}
+
+function renderSession(data) {
+  document.getElementById('orgName').textContent        = data.org_name;
+  document.getElementById('courseTitle').textContent    = data.course_title;
+  document.getElementById('programTag').textContent     = data.program_name;
+  document.getElementById('sessionTime').textContent    = `${data.time_start} – ${data.time_end}`;
+  document.getElementById('sessionDay').textContent     = `Day ${data.day_current} of ${data.day_total}`;
+  document.getElementById('enrolledCount').textContent  = `${data.enrolled_count} participants`;
+  document.getElementById('trainerName').textContent    = data.trainer_name;
+  document.getElementById('trainerSub').textContent     = data.trainer_title;
+  document.getElementById('facilitatorName').textContent = data.facilitator_name;
+  document.getElementById('facilitatorSub').textContent  = data.facilitator_title;
+  document.getElementById('clientName').textContent     = data.client_name;
+  document.getElementById('clientSub').textContent      = data.client_department;
+  document.getElementById('venueName').textContent      = data.venue_name;
+  document.getElementById('venueRoom').textContent      = data.venue_room;
+
+  // Status pill
+  const pill = document.querySelector('.status-pill');
+  const dot  = pill.querySelector('.dot');
+  const lbl  = document.getElementById('sessionStatus');
+  lbl.textContent = statusLabel(data.status);
+  const col = statusColor(data.status);
+  pill.style.background = col + '22';
+  pill.style.borderColor = col + '66';
+  dot.style.background = col;
+  lbl.style.color = col;
+  dot.style.animationPlayState = data.status === 'ongoing' ? 'running' : 'paused';
+
+  // Agenda
+  const strip = document.getElementById('scheduleStrip');
+  if (data.agenda && data.agenda.length) {
+    strip.innerHTML = data.agenda.map(a => `
+      <div class="schedule-item ${a.active ? 'active' : ''}">
+        <div class="s-time">${a.time}</div>
+        <div class="s-label">${a.label}</div>
+        ${a.sub ? `<div class="s-sub">${a.sub}</div>` : ''}
+      </div>
+    `).join('');
+  } else {
+    strip.style.display = 'none';
+  }
+
+  const now = new Date();
+  document.getElementById('refreshIndicator').textContent =
+    `Last updated: ${now.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit', hour12: false })}`;
+
+  document.getElementById('loadingOverlay').classList.add('hidden');
+  document.getElementById('errorOverlay').classList.add('hidden');
+  document.getElementById('mainScreen').style.display = 'grid';
+}
+
+// ─────────────────────────────────────────────
+// FETCH FROM SUPABASE
+// ─────────────────────────────────────────────
+async function fetchSession() {
+  if (SESSION_ID === 'DEMO') {
+    renderSession(DEMO);
+    return;
+  }
+
+  try {
+    // Fetch session + joins in one call using PostgREST
+    const url = `${SUPABASE_URL}/rest/v1/sessions?id=eq.${SESSION_ID}` +
+      `&select=*,courses(title,programs(name)),users!trainer_id(full_name,title),users!facilitator_id(full_name,title),companies(name,department),enrollments(count),session_agenda(time_start,label,notes,is_active)`;
+
+    const res = await fetch(url, {
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Accept': 'application/json'
+      }
+    });
+
+    if (!res.ok) throw new Error(`Supabase error: ${res.status}`);
+    const rows = await res.json();
+    if (!rows.length) throw new Error('Session not found.');
+
+    const s = rows[0];
+    renderSession({
+      org_name:         'Your Organization',
+      course_title:     s.courses?.title ?? '—',
+      program_name:     s.courses?.programs?.name ?? '—',
+      status:           s.status,
+      time_start:       s.time_start?.slice(0,5) ?? '—',
+      time_end:         s.time_end?.slice(0,5) ?? '—',
+      day_current:      s.day_current ?? 1,
+      day_total:        s.day_total ?? 1,
+      enrolled_count:   s.enrollments?.[0]?.count ?? 0,
+      trainer_name:     s['users!trainer_id']?.full_name ?? '—',
+      trainer_title:    s['users!trainer_id']?.title ?? '',
+      facilitator_name: s['users!facilitator_id']?.full_name ?? '—',
+      facilitator_title:s['users!facilitator_id']?.title ?? '',
+      client_name:      s.companies?.name ?? '—',
+      client_department:s.companies?.department ?? '',
+      venue_name:       s.venue_name ?? '—',
+      venue_room:       s.venue_room ?? '—',
+      agenda:           (s.session_agenda ?? []).map(a => ({
+        time:   a.time_start?.slice(0,5),
+        label:  a.label,
+        sub:    a.notes ?? '',
+        active: a.is_active
+      }))
+    });
+  } catch (err) {
+    document.getElementById('loadingOverlay').classList.add('hidden');
+    document.getElementById('errorOverlay').classList.remove('hidden');
+    document.getElementById('errorMsg').textContent = err.message;
+    document.getElementById('mainScreen').style.display = 'none';
+  }
+}
+
+// ─────────────────────────────────────────────
+// INIT + AUTO-REFRESH
+// ─────────────────────────────────────────────
+fetchSession();
+setInterval(fetchSession, REFRESH_INTERVAL_MS);
+</script>
+</body>
+</html>

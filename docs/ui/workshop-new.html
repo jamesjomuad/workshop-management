@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>New Workshop — TrainDesk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:       #F7F8FA;
+  --surface:  #FFFFFF;
+  --border:   #E4E7EC;
+  --border-2: #D0D5DD;
+  --text-1:   #101828;
+  --text-2:   #344054;
+  --text-3:   #667085;
+  --text-4:   #98A2B3;
+  --blue:     #2563EB;
+  --blue-lt:  #EFF6FF;
+  --blue-mid: #BFDBFE;
+  --green:    #059669;
+  --green-lt: #ECFDF5;
+  --amber:    #D97706;
+  --amber-lt: #FFFBEB;
+  --red:      #DC2626;
+  --red-lt:   #FEF2F2;
+  --purple:   #7C3AED;
+  --purple-lt:#F5F3FF;
+  --radius:   10px;
+}
+
+html,body{min-height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text-1);font-size:14px;line-height:1.5}
+
+/* ── Page shell ── */
+.page{display:grid;grid-template-rows:auto 1fr;min-height:100vh}
+
+/* ── Topbar ── */
+.topbar{
+  background:var(--surface);border-bottom:1px solid var(--border);
+  padding:0 32px;height:60px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:10;
+}
+.topbar-left{display:flex;align-items:center;gap:12px}
+.back-btn{
+  display:flex;align-items:center;gap:6px;
+  font-size:13px;font-weight:500;color:var(--text-3);
+  cursor:pointer;padding:6px 10px;border-radius:6px;
+  border:none;background:none;transition:background 0.12s,color 0.12s;
+}
+.back-btn:hover{background:var(--bg);color:var(--text-1)}
+.topbar-divider{width:1px;height:20px;background:var(--border)}
+.topbar-title{font-size:15px;font-weight:700;color:var(--text-1)}
+.topbar-actions{display:flex;gap:8px}
+
+/* ── Buttons ── */
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:8px 16px;border-radius:7px;font-size:13px;font-weight:600;
+  cursor:pointer;border:none;font-family:'Inter',sans-serif;
+  transition:opacity 0.12s,background 0.12s;
+}
+.btn:hover{opacity:0.88}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-ghost{background:transparent;border:1px solid var(--border-2);color:var(--text-2)}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-danger{background:var(--red-lt);color:var(--red);border:1px solid #FECACA}
+
+/* ── Two-col layout ── */
+.layout{
+  display:grid;
+  grid-template-columns:1fr 340px;
+  gap:24px;
+  padding:28px 32px;
+  align-items:start;
+  max-width:1200px;
+  width:100%;
+  margin:0 auto;
+}
+
+/* ── Form sections ── */
+.form-col{display:flex;flex-direction:column;gap:16px}
+
+.section{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);overflow:hidden;
+}
+.section-header{
+  padding:16px 20px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;
+}
+.section-icon{
+  width:30px;height:30px;border-radius:7px;
+  display:flex;align-items:center;justify-content:center;font-size:15px;
+  flex-shrink:0;
+}
+.section-header h2{font-size:14px;font-weight:700;color:var(--text-1)}
+.section-header p{font-size:12px;color:var(--text-3);margin-top:1px}
+.section-body{padding:20px;display:flex;flex-direction:column;gap:16px}
+
+/* ── Form controls ── */
+.field{display:flex;flex-direction:column;gap:6px}
+.field-row{display:grid;gap:14px}
+.field-row.col-2{grid-template-columns:1fr 1fr}
+.field-row.col-3{grid-template-columns:1fr 1fr 1fr}
+
+label{font-size:12px;font-weight:600;color:var(--text-2)}
+label .req{color:var(--red);margin-left:2px}
+label .opt{font-size:11px;font-weight:400;color:var(--text-4);margin-left:4px}
+
+input[type=text],input[type=date],input[type=number],textarea,select{
+  width:100%;padding:9px 12px;
+  border:1px solid var(--border-2);border-radius:7px;
+  font-size:13.5px;font-family:'Inter',sans-serif;color:var(--text-1);
+  background:var(--surface);outline:none;
+  transition:border-color 0.15s,box-shadow 0.15s;
+  appearance:none;-webkit-appearance:none;
+}
+input:focus,textarea:focus,select:focus{
+  border-color:var(--blue);
+  box-shadow:0 0 0 3px rgba(37,99,235,0.12);
+}
+input::placeholder,textarea::placeholder{color:var(--text-4)}
+textarea{resize:vertical;min-height:72px}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2398A2B3' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px}
+
+.hint{font-size:11px;color:var(--text-4);margin-top:2px}
+.error-msg{font-size:11px;color:var(--red);margin-top:2px;display:none}
+.field.has-error input,.field.has-error select,.field.has-error textarea{border-color:var(--red)}
+.field.has-error .error-msg{display:block}
+
+/* ── Room picker ── */
+.room-options{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.room-option{
+  border:2px solid var(--border);border-radius:8px;
+  padding:12px 14px;cursor:pointer;transition:border-color 0.15s,background 0.15s;
+  position:relative;
+}
+.room-option:hover{border-color:var(--blue-mid);background:var(--blue-lt)}
+.room-option.selected{border-color:var(--blue);background:var(--blue-lt)}
+.room-option.unavailable{opacity:0.45;cursor:not-allowed}
+.room-option input[type=radio]{position:absolute;opacity:0;pointer-events:none}
+.ro-venue{font-size:10px;color:var(--text-3);font-family:'DM Mono',monospace;margin-bottom:3px}
+.ro-name{font-size:13px;font-weight:700;color:var(--text-1);margin-bottom:2px}
+.ro-cap{font-size:11px;color:var(--text-3)}
+.ro-badge{
+  position:absolute;top:8px;right:8px;
+  font-size:10px;font-weight:600;padding:2px 7px;border-radius:100px;
+}
+.ro-badge.avail{background:var(--green-lt);color:var(--green)}
+.ro-badge.busy{background:var(--red-lt);color:var(--red)}
+.room-option.none-option{
+  grid-column:1/-1;
+  display:flex;align-items:center;gap:8px;
+  padding:10px 14px;
+}
+.room-option.none-option .ro-name{font-weight:500;color:var(--text-3);font-size:13px}
+
+/* ── Program builder ── */
+.program-list{display:flex;flex-direction:column;gap:10px}
+.program-item{
+  border:1px solid var(--border);border-radius:8px;overflow:hidden;
+}
+.program-item-header{
+  display:flex;align-items:center;gap:10px;
+  padding:12px 14px;background:var(--bg);cursor:pointer;
+}
+.program-item-header:hover{background:#EDEEF1}
+.pi-num{
+  width:22px;height:22px;border-radius:50%;
+  background:var(--blue);color:#fff;
+  font-size:11px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.pi-name{flex:1;font-size:13px;font-weight:600;color:var(--text-1)}
+.pi-meta{font-size:11px;color:var(--text-3)}
+.pi-remove{
+  padding:4px 8px;border-radius:5px;border:none;background:none;
+  font-size:12px;color:var(--text-4);cursor:pointer;
+}
+.pi-remove:hover{background:var(--red-lt);color:var(--red)}
+.program-item-body{padding:14px;display:flex;flex-direction:column;gap:12px;border-top:1px solid var(--border)}
+
+.add-program-btn{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:10px;border:2px dashed var(--border-2);border-radius:8px;
+  font-size:13px;font-weight:500;color:var(--text-3);cursor:pointer;
+  background:none;width:100%;font-family:'Inter',sans-serif;
+  transition:border-color 0.15s,color 0.15s,background 0.15s;
+}
+.add-program-btn:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-lt)}
+
+/* ── Enrollment toggle ── */
+.toggle-group{display:flex;gap:8px}
+.toggle-opt{
+  flex:1;padding:9px 12px;border-radius:7px;
+  border:2px solid var(--border);cursor:pointer;text-align:center;
+  font-size:13px;font-weight:600;color:var(--text-3);
+  transition:all 0.15s;user-select:none;
+}
+.toggle-opt.active{border-color:var(--blue);background:var(--blue-lt);color:var(--blue)}
+
+/* ── Capacity row ── */
+.capacity-input{display:flex;align-items:center;gap:0}
+.capacity-input button{
+  width:36px;height:38px;border:1px solid var(--border-2);
+  background:var(--bg);font-size:16px;cursor:pointer;
+  color:var(--text-2);flex-shrink:0;
+  transition:background 0.12s;
+}
+.capacity-input button:first-child{border-radius:7px 0 0 7px;border-right:none}
+.capacity-input button:last-child{border-radius:0 7px 7px 0;border-left:none}
+.capacity-input button:hover{background:var(--border)}
+.capacity-input input{border-radius:0;text-align:center;width:72px;flex-shrink:0}
+
+/* ── Summary panel ── */
+.summary-col{position:sticky;top:80px;display:flex;flex-direction:column;gap:12px}
+
+.summary-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);overflow:hidden;
+}
+.summary-header{
+  padding:14px 18px;border-bottom:1px solid var(--border);
+  font-size:13px;font-weight:700;color:var(--text-1);
+}
+.summary-body{padding:16px 18px;display:flex;flex-direction:column;gap:14px}
+
+.sum-row{display:flex;flex-direction:column;gap:3px}
+.sum-label{font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-4)}
+.sum-value{font-size:13.5px;font-weight:500;color:var(--text-1)}
+.sum-value.empty{color:var(--text-4);font-style:italic;font-weight:400}
+.sum-divider{height:1px;background:var(--border)}
+
+.sum-programs{display:flex;flex-direction:column;gap:6px}
+.sum-program-item{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 10px;background:var(--bg);border-radius:6px;
+}
+.sum-program-dot{width:8px;height:8px;border-radius:50%;background:var(--blue);flex-shrink:0}
+.sum-program-name{font-size:12px;font-weight:600;color:var(--text-1);flex:1}
+.sum-program-trainer{font-size:11px;color:var(--text-3)}
+
+.status-selector{display:flex;flex-direction:column;gap:6px}
+.status-opt{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 10px;border-radius:7px;border:2px solid var(--border);
+  cursor:pointer;transition:all 0.15s;
+}
+.status-opt:hover{border-color:var(--border-2);background:var(--bg)}
+.status-opt.active{border-color:var(--blue);background:var(--blue-lt)}
+.status-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.status-opt-label{font-size:13px;font-weight:600;color:var(--text-1)}
+.status-opt-sub{font-size:11px;color:var(--text-3);margin-top:1px}
+
+/* ── Pills ── */
+.pill{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:100px;font-size:11px;font-weight:600}
+.pill-blue{background:var(--blue-lt);color:var(--blue)}
+.pill-green{background:var(--green-lt);color:var(--green)}
+.pill-amber{background:var(--amber-lt);color:var(--amber)}
+
+/* scrollbar */
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:10px}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="back-btn" onclick="history.back()">← Workshops</button>
+      <div class="topbar-divider"></div>
+      <div class="topbar-title">New Workshop</div>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn btn-ghost" onclick="saveDraft()">Save as draft</button>
+      <button class="btn btn-primary" onclick="publish()">Publish workshop</button>
+    </div>
+  </div>
+
+  <!-- Two-col layout -->
+  <div class="layout">
+
+    <!-- LEFT: Form -->
+    <div class="form-col">
+
+      <!-- 1. Basic Info -->
+      <div class="section">
+        <div class="section-header">
+          <div class="section-icon" style="background:#EFF6FF">📋</div>
+          <div>
+            <h2>Workshop details</h2>
+            <p>Name, description, and dates</p>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="field" id="field-title">
+            <label>Workshop title <span class="req">*</span></label>
+            <input type="text" id="title" placeholder="e.g. Project Management — Batch 5"
+              oninput="updateSummary()" />
+            <span class="error-msg">Title is required</span>
+          </div>
+          <div class="field">
+            <label>Description <span class="opt">(optional)</span></label>
+            <textarea id="description" placeholder="Brief overview of this workshop…" rows="3"></textarea>
+          </div>
+          <div class="field-row col-2">
+            <div class="field" id="field-date-start">
+              <label>Start date <span class="req">*</span></label>
+              <input type="date" id="date-start" oninput="updateSummary()" />
+              <span class="error-msg">Start date is required</span>
+            </div>
+            <div class="field" id="field-date-end">
+              <label>End date <span class="req">*</span></label>
+              <input type="date" id="date-end" oninput="updateSummary()" />
+              <span class="error-msg">Must be after start date</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Conference Room -->
+      <div class="section">
+        <div class="section-header">
+          <div class="section-icon" style="background:#FFFBEB">🏨</div>
+          <div>
+            <h2>Conference room</h2>
+            <p>Optional — assign later if venue is unconfirmed</p>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="room-options" id="room-options">
+
+            <div class="room-option" onclick="selectRoom(this, 'room-1', 'Ballroom B', 'Seda Hotel BGC')">
+              <input type="radio" name="room" value="room-1"/>
+              <div class="ro-badge avail">Available</div>
+              <div class="ro-venue">🏨 Seda Hotel BGC</div>
+              <div class="ro-name">Ballroom B</div>
+              <div class="ro-cap">👥 40 pax · 3rd Floor</div>
+            </div>
+
+            <div class="room-option" onclick="selectRoom(this, 'room-2', 'Function Room 1', 'Seda Hotel BGC')">
+              <input type="radio" name="room" value="room-2"/>
+              <div class="ro-badge avail">Available</div>
+              <div class="ro-venue">🏨 Seda Hotel BGC</div>
+              <div class="ro-name">Function Room 1</div>
+              <div class="ro-cap">👥 25 pax · 2nd Floor</div>
+            </div>
+
+            <div class="room-option unavailable" onclick="return false">
+              <div class="ro-badge busy">Occupied</div>
+              <div class="ro-venue">🏨 Marriott Manila</div>
+              <div class="ro-name">Boardroom A</div>
+              <div class="ro-cap">👥 20 pax · Mezzanine</div>
+            </div>
+
+            <div class="room-option" onclick="selectRoom(this, 'room-4', 'Grand Salon', 'Marriott Manila')">
+              <input type="radio" name="room" value="room-4"/>
+              <div class="ro-badge avail">Available</div>
+              <div class="ro-venue">🏨 Marriott Manila</div>
+              <div class="ro-name">Grand Salon</div>
+              <div class="ro-cap">👥 60 pax · Lobby Level</div>
+            </div>
+
+            <div class="room-option none-option" onclick="selectRoom(this, null, null, null)">
+              <input type="radio" name="room" value="none" checked/>
+              <div class="ro-name">Decide later — no room assigned yet</div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Programs -->
+      <div class="section">
+        <div class="section-header">
+          <div class="section-icon" style="background:#F5F3FF">📚</div>
+          <div>
+            <h2>Programs</h2>
+            <p>Add one or more programs to run in this workshop</p>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="program-list" id="program-list"></div>
+          <button class="add-program-btn" onclick="addProgram()">+ Add program</button>
+        </div>
+      </div>
+
+      <!-- 4. Trainer & Facilitator -->
+      <div class="section">
+        <div class="section-header">
+          <div class="section-icon" style="background:#ECFDF5">👤</div>
+          <div>
+            <h2>Trainer & facilitator</h2>
+            <p>Assign the people running this workshop</p>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="field-row col-2">
+            <div class="field">
+              <label>Lead trainer <span class="req">*</span></label>
+              <select id="trainer" onchange="updateSummary()">
+                <option value="">Select trainer…</option>
+                <option>Maria Santos</option>
+                <option>Rico Cruz</option>
+                <option>Ana Reyes</option>
+                <option>Liza Ocampo</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Facilitator <span class="opt">(optional)</span></label>
+              <select id="facilitator" onchange="updateSummary()">
+                <option value="">Select facilitator…</option>
+                <option>Rico Dela Cruz</option>
+                <option>Jen Valdez</option>
+                <option>Mark Tan</option>
+              </select>
+            </div>
+          </div>
+          <div class="hint">Trainers assigned to individual programs override this for their sessions.</div>
+        </div>
+      </div>
+
+      <!-- 5. Client & Enrollment -->
+      <div class="section">
+        <div class="section-header">
+          <div class="section-icon" style="background:#FEF2F2">🏢</div>
+          <div>
+            <h2>Client & enrollment</h2>
+            <p>Who's attending and how they enroll</p>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="field">
+            <label>Client company <span class="opt">(optional — leave blank for open enrollment)</span></label>
+            <select id="client" onchange="updateSummary()">
+              <option value="">Open enrollment — no specific client</option>
+              <option>Pacific Corp Philippines</option>
+              <option>IndyCo Ltd.</option>
+              <option>BrightPath Inc.</option>
+              <option>Metro Solutions</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Enrollment type <span class="req">*</span></label>
+            <div class="toggle-group">
+              <div class="toggle-opt active" onclick="setEnrollType(this,'company')">Company-sponsored</div>
+              <div class="toggle-opt" onclick="setEnrollType(this,'self')">Self-enrolled</div>
+              <div class="toggle-opt" onclick="setEnrollType(this,'mixed')">Mixed</div>
+            </div>
+          </div>
+          <div class="field-row col-2">
+            <div class="field">
+              <label>Max capacity</label>
+              <div class="capacity-input">
+                <button onclick="stepCapacity(-1)">−</button>
+                <input type="number" id="capacity" value="20" min="1" max="200" oninput="updateSummary()"/>
+                <button onclick="stepCapacity(1)">+</button>
+              </div>
+            </div>
+            <div class="field">
+              <label>Payment required</label>
+              <select id="payment">
+                <option>Required — Paid enrollment</option>
+                <option>Waived — No payment needed</option>
+                <option>Per arrangement</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /form-col -->
+
+    <!-- RIGHT: Summary -->
+    <div class="summary-col">
+
+      <!-- Status -->
+      <div class="summary-card">
+        <div class="summary-header">Status</div>
+        <div class="summary-body">
+          <div class="status-selector">
+            <div class="status-opt active" onclick="setStatus(this,'draft')">
+              <div class="status-dot" style="background:var(--text-4)"></div>
+              <div>
+                <div class="status-opt-label">Draft</div>
+                <div class="status-opt-sub">Not visible to trainees</div>
+              </div>
+            </div>
+            <div class="status-opt" onclick="setStatus(this,'published')">
+              <div class="status-dot" style="background:var(--blue)"></div>
+              <div>
+                <div class="status-opt-label">Published</div>
+                <div class="status-opt-sub">Open for enrollment</div>
+              </div>
+            </div>
+            <div class="status-opt" onclick="setStatus(this,'upcoming')">
+              <div class="status-dot" style="background:var(--amber)"></div>
+              <div>
+                <div class="status-opt-label">Upcoming</div>
+                <div class="status-opt-sub">Confirmed, enrollment closed</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Workshop summary -->
+      <div class="summary-card">
+        <div class="summary-header">Workshop summary</div>
+        <div class="summary-body">
+
+          <div class="sum-row">
+            <div class="sum-label">Title</div>
+            <div class="sum-value empty" id="sum-title">Not set</div>
+          </div>
+
+          <div class="sum-divider"></div>
+
+          <div class="sum-row">
+            <div class="sum-label">Dates</div>
+            <div class="sum-value empty" id="sum-dates">Not set</div>
+          </div>
+
+          <div class="sum-row">
+            <div class="sum-label">Duration</div>
+            <div class="sum-value empty" id="sum-duration">—</div>
+          </div>
+
+          <div class="sum-divider"></div>
+
+          <div class="sum-row">
+            <div class="sum-label">Venue</div>
+            <div class="sum-value empty" id="sum-room">No room assigned</div>
+          </div>
+
+          <div class="sum-divider"></div>
+
+          <div class="sum-row">
+            <div class="sum-label">Trainer</div>
+            <div class="sum-value empty" id="sum-trainer">Not assigned</div>
+          </div>
+
+          <div class="sum-row">
+            <div class="sum-label">Facilitator</div>
+            <div class="sum-value empty" id="sum-facilitator">Not assigned</div>
+          </div>
+
+          <div class="sum-divider"></div>
+
+          <div class="sum-row">
+            <div class="sum-label">Client</div>
+            <div class="sum-value empty" id="sum-client">Open enrollment</div>
+          </div>
+
+          <div class="sum-row">
+            <div class="sum-label">Capacity</div>
+            <div class="sum-value" id="sum-capacity">20 participants</div>
+          </div>
+
+          <div class="sum-divider"></div>
+
+          <div class="sum-row">
+            <div class="sum-label">Programs</div>
+            <div class="sum-programs" id="sum-programs">
+              <div class="sum-value empty">No programs added</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Save actions (repeated for convenience) -->
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="publish()">Publish workshop</button>
+        <button class="btn btn-ghost" style="width:100%;justify-content:center" onclick="saveDraft()">Save as draft</button>
+      </div>
+
+    </div><!-- /summary-col -->
+
+  </div><!-- /layout -->
+</div>
+
+<script>
+// ── State ──
+let selectedRoom = { id: null, name: null, venue: null };
+let programs = [];
+let programCounter = 0;
+let enrollType = 'company';
+let currentStatus = 'draft';
+
+const PROGRAM_OPTIONS = [
+  'PM Fundamentals',
+  'Safety & Compliance',
+  'Leadership Essentials',
+  'HR Fundamentals',
+  'Digital Literacy',
+  'Risk Management',
+  'Custom (new program)',
+];
+
+const TRAINER_OPTIONS = ['Maria Santos','Rico Cruz','Ana Reyes','Liza Ocampo'];
+
+// ── Room selection ──
+function selectRoom(el, id, name, venue) {
+  if (el.classList.contains('unavailable')) return;
+  document.querySelectorAll('.room-option').forEach(r => r.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedRoom = { id, name, venue };
+  updateSummary();
+}
+
+// Mark "none" as default selected
+document.querySelector('.room-option.none-option').classList.add('selected');
+
+// ── Program builder ──
+function addProgram() {
+  programCounter++;
+  const id = programCounter;
+  programs.push({ id, name: '', trainer: '' });
+
+  const list = document.getElementById('program-list');
+  const item = document.createElement('div');
+  item.className = 'program-item';
+  item.id = `program-item-${id}`;
+  item.innerHTML = `
+    <div class="program-item-header" onclick="toggleProgram(${id})">
+      <div class="pi-num">${programs.length}</div>
+      <div class="pi-name" id="pi-name-${id}">New program</div>
+      <div class="pi-meta" id="pi-meta-${id}">No trainer assigned</div>
+      <button class="pi-remove" onclick="removeProgram(event, ${id})">✕</button>
+    </div>
+    <div class="program-item-body" id="pi-body-${id}">
+      <div class="field">
+        <label>Program</label>
+        <select onchange="setProgramName(${id}, this.value)">
+          <option value="">Select or type a program…</option>
+          ${PROGRAM_OPTIONS.map(p => `<option>${p}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field">
+        <label>Trainer for this program <span class="opt">(overrides lead trainer)</span></label>
+        <select onchange="setProgramTrainer(${id}, this.value)">
+          <option value="">Use lead trainer</option>
+          ${TRAINER_OPTIONS.map(t => `<option>${t}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field-row col-2">
+        <div class="field">
+          <label>Schedule time</label>
+          <select>
+            <option>Morning (08:00–12:00)</option>
+            <option>Afternoon (13:00–17:00)</option>
+            <option>Full day (08:00–17:00)</option>
+            <option>Custom</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Starting day</label>
+          <select>
+            <option>Day 1</option>
+            <option>Day 2</option>
+            <option>Day 3</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  `;
+  list.appendChild(item);
+  updateSummary();
+}
+
+function toggleProgram(id) {
+  const body = document.getElementById(`pi-body-${id}`);
+  body.style.display = body.style.display === 'none' ? '' : 'none';
+}
+
+function removeProgram(e, id) {
+  e.stopPropagation();
+  programs = programs.filter(p => p.id !== id);
+  document.getElementById(`program-item-${id}`)?.remove();
+  // Renumber
+  document.querySelectorAll('.pi-num').forEach((el, i) => el.textContent = i + 1);
+  updateSummary();
+}
+
+function setProgramName(id, val) {
+  const p = programs.find(p => p.id === id);
+  if (p) p.name = val;
+  const label = document.getElementById(`pi-name-${id}`);
+  if (label) label.textContent = val || 'New program';
+  updateSummary();
+}
+
+function setProgramTrainer(id, val) {
+  const p = programs.find(p => p.id === id);
+  if (p) p.trainer = val;
+  const meta = document.getElementById(`pi-meta-${id}`);
+  if (meta) meta.textContent = val || 'No trainer assigned';
+  updateSummary();
+}
+
+// ── Enrollment type ──
+function setEnrollType(el, type) {
+  enrollType = type;
+  document.querySelectorAll('.toggle-opt').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ── Status ──
+function setStatus(el, status) {
+  currentStatus = status;
+  document.querySelectorAll('.status-opt').forEach(s => s.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ── Capacity stepper ──
+function stepCapacity(delta) {
+  const inp = document.getElementById('capacity');
+  const val = parseInt(inp.value) || 0;
+  inp.value = Math.max(1, Math.min(200, val + delta));
+  updateSummary();
+}
+
+// ── Live summary ──
+function updateSummary() {
+  const title    = document.getElementById('title').value.trim();
+  const dateS    = document.getElementById('date-start').value;
+  const dateE    = document.getElementById('date-end').value;
+  const trainer  = document.getElementById('trainer').value;
+  const facil    = document.getElementById('facilitator').value;
+  const client   = document.getElementById('client').value;
+  const capacity = document.getElementById('capacity').value;
+
+  // Title
+  const sumTitle = document.getElementById('sum-title');
+  sumTitle.textContent   = title || 'Not set';
+  sumTitle.className     = 'sum-value' + (title ? '' : ' empty');
+
+  // Dates
+  const sumDates = document.getElementById('sum-dates');
+  const sumDur   = document.getElementById('sum-duration');
+  if (dateS && dateE) {
+    const s = new Date(dateS), e = new Date(dateE);
+    const days = Math.round((e - s) / 86400000) + 1;
+    sumDates.textContent = `${fmt(dateS)} – ${fmt(dateE)}`;
+    sumDates.className   = 'sum-value';
+    sumDur.textContent   = days > 0 ? `${days} day${days > 1 ? 's' : ''}` : '—';
+    sumDur.className     = days > 0 ? 'sum-value' : 'sum-value empty';
+  } else {
+    sumDates.textContent = 'Not set'; sumDates.className = 'sum-value empty';
+    sumDur.textContent   = '—';       sumDur.className   = 'sum-value empty';
+  }
+
+  // Room
+  const sumRoom = document.getElementById('sum-room');
+  if (selectedRoom.name) {
+    sumRoom.textContent = `${selectedRoom.name} · ${selectedRoom.venue}`;
+    sumRoom.className   = 'sum-value';
+  } else {
+    sumRoom.textContent = 'No room assigned'; sumRoom.className = 'sum-value empty';
+  }
+
+  // Trainer / Facilitator
+  const sumT = document.getElementById('sum-trainer');
+  sumT.textContent = trainer || 'Not assigned';
+  sumT.className   = 'sum-value' + (trainer ? '' : ' empty');
+
+  const sumF = document.getElementById('sum-facilitator');
+  sumF.textContent = facil || 'Not assigned';
+  sumF.className   = 'sum-value' + (facil ? '' : ' empty');
+
+  // Client
+  const sumC = document.getElementById('sum-client');
+  sumC.textContent = client || 'Open enrollment';
+  sumC.className   = 'sum-value' + (client ? '' : ' empty');
+
+  // Capacity
+  document.getElementById('sum-capacity').textContent = `${capacity} participants`;
+
+  // Programs
+  const sumProgs = document.getElementById('sum-programs');
+  if (programs.length === 0) {
+    sumProgs.innerHTML = '<div class="sum-value empty">No programs added</div>';
+  } else {
+    sumProgs.innerHTML = programs.map(p => `
+      <div class="sum-program-item">
+        <div class="sum-program-dot"></div>
+        <div class="sum-program-name">${p.name || 'New program'}</div>
+        <div class="sum-program-trainer">${p.trainer || trainer || '—'}</div>
+      </div>
+    `).join('');
+  }
+}
+
+function fmt(d) {
+  if (!d) return '';
+  const dt = new Date(d + 'T00:00:00');
+  return dt.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+// ── Validation ──
+function validate() {
+  let ok = true;
+
+  const title = document.getElementById('title').value.trim();
+  const fTitle = document.getElementById('field-title');
+  fTitle.classList.toggle('has-error', !title);
+  if (!title) ok = false;
+
+  const ds = document.getElementById('date-start').value;
+  const de = document.getElementById('date-end').value;
+  const fDS = document.getElementById('field-date-start');
+  const fDE = document.getElementById('field-date-end');
+  fDS.classList.toggle('has-error', !ds);
+  if (!ds) ok = false;
+  const datesOk = de && ds && new Date(de) >= new Date(ds);
+  fDE.classList.toggle('has-error', !datesOk);
+  if (!datesOk) ok = false;
+
+  return ok;
+}
+
+// ── Actions ──
+function saveDraft() {
+  setStatus(document.querySelector('.status-opt'), 'draft');
+  if (validate()) {
+    alert('Workshop saved as draft.');
+  }
+}
+
+function publish() {
+  if (validate()) {
+    alert('Workshop published successfully!');
+  }
+}
+
+// Init
+updateSummary();
+</script>
+</body>
+</html>

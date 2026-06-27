@@ -9,7 +9,7 @@
         <div class="d-none d-sm-flex align-center ga-6 me-6">
           <a v-for="link in navLinks" :key="link.label" :href="link.href" class="nav-link">{{ link.label }}</a>
         </div>
-        <v-btn variant="outlined" color="primary" size="small" :to="loggedIn ? '/dashboard' : '/login'" class="text-none">
+        <v-btn variant="outlined" color="primary" size="small" :to="loggedIn ? '/manage' : '/login'" class="text-none">
           {{ loggedIn ? 'Dashboard' : 'Sign In' }}
         </v-btn>
       </v-container>

@@ -25,7 +25,7 @@ async function handleSetPassword() {
   errorMsg.value = ''
   try {
     await updatePassword(password.value)
-    await router.push('/dashboard')
+    await router.push('/manage')
   } catch (err: any) {
     errorMsg.value = err?.message || 'Failed to set password.'
   } finally {

@@ -182,7 +182,7 @@ const showConfirmPassword = ref(false)
 const formRef = ref<VForm>()
 
 if (user.value) {
-  await navigateTo('/dashboard')
+  await navigateTo('/manage')
 }
 
 const nameRules = [
@@ -219,7 +219,7 @@ async function handleSignup() {
   try {
     const data = await signUp(email.value, password.value, { full_name: fullName.value.trim() })
     if (data?.session) {
-      await navigateTo('/dashboard')
+      await navigateTo('/manage')
     } else {
       success.value = true
     }

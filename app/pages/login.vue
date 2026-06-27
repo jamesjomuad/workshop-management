@@ -116,7 +116,7 @@ const emailRules = [
 const requiredRules = [(v: string) => !!v || 'Password is required']
 
 if (user.value) {
-  await navigateTo('/dashboard')
+  await navigateTo('/manage')
 }
 
 async function handleLogin() {
@@ -128,7 +128,7 @@ async function handleLogin() {
   success.value = ''
   try {
     await login({ email: email.value, password: password.value })
-    await navigateTo('/dashboard')
+    await navigateTo('/manage')
   } catch (err: any) {
     error.value = err?.message || 'Invalid email or password. Please try again.'
   } finally {

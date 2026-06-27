@@ -52,9 +52,13 @@ onUnmounted(() => window.removeEventListener('resize', onResize))
 
 const pageTitle = computed(() => {
   const map: Record<string, string> = {
-    '/dashboard': 'Dashboard',
-    '/dashboard/users': 'Users',
-    '/dashboard/settings': 'Settings',
+    '/manage': 'Dashboard',
+    '/manage/users': 'Users',
+    '/manage/settings': 'Settings',
+    '/manage/rooms': 'Conference Rooms',
+    '/manage/workshops': 'Workshops',
+    '/manage/programs': 'Programs & Sessions',
+    '/manage/enrollments': 'Enrollments & Attendance',
   }
   return map[route.path] || 'Admin'
 })

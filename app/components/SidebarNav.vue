@@ -1,7 +1,23 @@
 <template>
   <v-list nav density="compact">
+    <v-list-subheader v-if="!rail" class="text-uppercase text-caption font-weight-bold">
+      Main
+    </v-list-subheader>
     <v-list-item
-      v-for="item in items"
+      v-for="item in Main"
+      :key="item.to"
+      :to="item.to"
+      :prepend-icon="item.icon"
+      :title="item.title"
+      :value="item.to"
+      color="primary"
+      exact
+    />
+    <v-list-subheader v-if="!rail" class="text-uppercase text-caption font-weight-bold">
+      Settings
+    </v-list-subheader>
+    <v-list-item
+      v-for="item in Settings"
       :key="item.to"
       :to="item.to"
       :prepend-icon="item.icon"
@@ -29,10 +45,17 @@ defineProps<{ rail?: boolean }>()
 
 const { logout } = useAuth()
 
-const items = [
-  { title: 'Dashboard', icon: 'mdi-view-dashboard', to: '/dashboard' },
-  { title: 'Users', icon: 'mdi-account-group', to: '/dashboard/users' },
-  { title: 'Settings', icon: 'mdi-cog', to: '/dashboard/settings' },
+const Main = [
+  { title: 'Dashboard', icon: 'mdi-view-dashboard', to: '/manage' },
+  { title: 'Conference Rooms', icon: 'mdi-door-open', to: '/manage/rooms' },
+  { title: 'Workshops', icon: 'mdi-calendar-text', to: '/manage/workshops' },
+  { title: 'Programs & Sessions', icon: 'mdi-book-open-variant', to: '/manage/programs' },
+  { title: 'Enrollments', icon: 'mdi-account-check', to: '/manage/enrollments' },
+]
+
+const Settings = [
+  { title: 'Users', icon: 'mdi-account-group', to: '/manage/users' },
+  { title: 'Settings', icon: 'mdi-cog', to: '/manage/settings' },
 ]
 
 async function handleLogout() {

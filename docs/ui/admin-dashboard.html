@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Admin Dashboard — Training Management</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:        #F7F8FA;
+  --surface:   #FFFFFF;
+  --border:    #E4E7EC;
+  --border-2:  #D0D5DD;
+  --text-1:    #101828;
+  --text-2:    #344054;
+  --text-3:    #667085;
+  --text-4:    #98A2B3;
+  --blue:      #2563EB;
+  --blue-lt:   #EFF6FF;
+  --blue-mid:  #BFDBFE;
+  --indigo:    #4F46E5;
+  --green:     #059669;
+  --green-lt:  #ECFDF5;
+  --amber:     #D97706;
+  --amber-lt:  #FFFBEB;
+  --red:       #DC2626;
+  --red-lt:    #FEF2F2;
+  --purple:    #7C3AED;
+  --purple-lt: #F5F3FF;
+  --sidebar-w: 240px;
+  --header-h:  60px;
+}
+
+html,body{height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text-1);font-size:14px;line-height:1.5}
+
+/* ── Shell ── */
+.shell{display:flex;height:100vh;overflow:hidden}
+
+/* ── Sidebar ── */
+.sidebar{
+  width:var(--sidebar-w);min-width:var(--sidebar-w);
+  background:var(--surface);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  overflow-y:auto;
+}
+
+.sidebar-logo{
+  padding:20px 20px 16px;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;
+}
+
+.logo-mark{
+  width:32px;height:32px;border-radius:8px;
+  background:var(--blue);
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:16px;flex-shrink:0;
+}
+
+.logo-text{font-weight:700;font-size:14px;color:var(--text-1);line-height:1.2}
+.logo-sub{font-size:11px;color:var(--text-3)}
+
+.sidebar-section{padding:16px 12px 8px}
+.sidebar-section-label{
+  font-size:10px;font-weight:600;letter-spacing:0.08em;
+  text-transform:uppercase;color:var(--text-4);
+  padding:0 8px;margin-bottom:4px;
+}
+
+.nav-item{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 10px;border-radius:6px;cursor:pointer;
+  font-size:13.5px;font-weight:500;color:var(--text-2);
+  transition:background 0.12s,color 0.12s;
+  user-select:none;
+}
+.nav-item:hover{background:var(--bg);color:var(--text-1)}
+.nav-item.active{background:var(--blue-lt);color:var(--blue)}
+.nav-item .icon{font-size:16px;width:20px;text-align:center;flex-shrink:0}
+.nav-item .badge{
+  margin-left:auto;background:var(--blue);color:#fff;
+  font-size:10px;font-weight:600;border-radius:100px;
+  padding:1px 7px;font-family:'DM Mono',monospace;
+}
+
+.sidebar-footer{
+  margin-top:auto;padding:16px 12px;
+  border-top:1px solid var(--border);
+}
+
+.user-row{display:flex;align-items:center;gap:10px}
+.avatar{
+  width:32px;height:32px;border-radius:50%;
+  background:var(--indigo);color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:700;flex-shrink:0;
+}
+.user-info .u-name{font-size:13px;font-weight:600;color:var(--text-1)}
+.user-info .u-role{font-size:11px;color:var(--text-3)}
+
+/* ── Main ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+
+.topbar{
+  height:var(--header-h);min-height:var(--header-h);
+  background:var(--surface);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 28px;gap:16px;
+}
+
+.page-title{font-size:16px;font-weight:700;color:var(--text-1)}
+.page-sub{font-size:12px;color:var(--text-3);margin-top:1px}
+
+.topbar-actions{display:flex;align-items:center;gap:10px}
+
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:7px 14px;border-radius:7px;font-size:13px;font-weight:600;
+  cursor:pointer;border:none;transition:opacity 0.12s,background 0.12s;
+  font-family:'Inter',sans-serif;
+}
+.btn:hover{opacity:0.88}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-ghost{background:transparent;border:1px solid var(--border-2);color:var(--text-2)}
+.btn-sm{padding:5px 11px;font-size:12px}
+.btn-danger{background:var(--red);color:#fff}
+
+.content{flex:1;overflow-y:auto;padding:28px}
+
+/* ── Page sections (views) ── */
+.view{display:none}
+.view.active{display:block}
+
+/* ── Stat cards ── */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+
+.stat-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;padding:20px;
+}
+.stat-card .s-label{font-size:12px;font-weight:500;color:var(--text-3);margin-bottom:8px}
+.stat-card .s-value{font-size:28px;font-weight:700;color:var(--text-1);line-height:1;margin-bottom:6px}
+.stat-card .s-delta{font-size:12px;color:var(--text-3)}
+.stat-card .s-delta.up{color:var(--green)}
+.stat-card .s-icon{
+  width:36px;height:36px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;margin-bottom:12px;
+}
+
+/* ── Cards / panels ── */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.panel-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 20px;border-bottom:1px solid var(--border);
+}
+.panel-title{font-size:14px;font-weight:700;color:var(--text-1)}
+.panel-sub{font-size:12px;color:var(--text-3);margin-top:1px}
+.panel-body{padding:20px}
+
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:24px}
+
+/* ── Table ── */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{
+  font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;
+  color:var(--text-3);padding:10px 16px;
+  border-bottom:1px solid var(--border);text-align:left;white-space:nowrap;
+}
+td{padding:13px 16px;border-bottom:1px solid var(--border);font-size:13.5px;color:var(--text-2)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#FAFAFA}
+.td-primary{font-weight:600;color:var(--text-1)}
+
+/* ── Badges / pills ── */
+.pill{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:3px 9px;border-radius:100px;font-size:11px;font-weight:600;
+}
+.pill-green{background:var(--green-lt);color:var(--green)}
+.pill-amber{background:var(--amber-lt);color:var(--amber)}
+.pill-blue{background:var(--blue-lt);color:var(--blue)}
+.pill-red{background:var(--red-lt);color:var(--red)}
+.pill-purple{background:var(--purple-lt);color:var(--purple)}
+.pill-gray{background:var(--bg);color:var(--text-3);border:1px solid var(--border)}
+.pill .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+
+/* ── Room grid ── */
+.room-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.room-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;padding:18px;cursor:pointer;
+  transition:border-color 0.15s,box-shadow 0.15s;
+  position:relative;overflow:hidden;
+}
+.room-card:hover{border-color:var(--blue-mid);box-shadow:0 2px 12px rgba(37,99,235,0.08)}
+.room-card .rc-venue{font-size:11px;color:var(--text-3);margin-bottom:4px;font-family:'DM Mono',monospace}
+.room-card .rc-name{font-size:15px;font-weight:700;color:var(--text-1);margin-bottom:10px}
+.room-card .rc-capacity{font-size:12px;color:var(--text-3);margin-bottom:12px}
+.room-card .rc-workshop{
+  background:var(--bg);border-radius:6px;padding:10px 12px;
+  border-left:3px solid var(--blue);
+}
+.room-card .rc-ws-title{font-size:12px;font-weight:600;color:var(--text-1);margin-bottom:2px}
+.room-card .rc-ws-dates{font-size:11px;color:var(--text-3);font-family:'DM Mono',monospace}
+.room-card .rc-empty{
+  background:var(--bg);border-radius:6px;padding:10px 12px;
+  font-size:12px;color:var(--text-4);font-style:italic;
+}
+.room-card .rc-status{position:absolute;top:14px;right:14px}
+
+/* ── Workshop timeline ── */
+.ws-list{display:flex;flex-direction:column;gap:12px}
+.ws-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;padding:18px 20px;
+  display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:start;
+}
+.ws-date-col{
+  text-align:center;background:var(--bg);border-radius:8px;
+  padding:10px 14px;min-width:60px;
+}
+.ws-date-col .wsd-month{font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-3)}
+.ws-date-col .wsd-day{font-size:26px;font-weight:700;color:var(--text-1);line-height:1}
+.ws-info .wi-room{font-size:11px;color:var(--text-3);font-family:'DM Mono',monospace;margin-bottom:4px}
+.ws-info .wi-title{font-size:15px;font-weight:700;color:var(--text-1);margin-bottom:6px}
+.ws-info .wi-meta{display:flex;gap:16px;flex-wrap:wrap}
+.ws-info .wi-meta span{font-size:12px;color:var(--text-3)}
+.ws-info .wi-meta strong{color:var(--text-2)}
+.ws-actions{display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+
+/* ── Program view ── */
+.prog-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;overflow:hidden;margin-bottom:12px;
+}
+.prog-header{
+  padding:16px 20px;display:flex;align-items:center;justify-content:space-between;
+  cursor:pointer;
+}
+.prog-header:hover{background:#FAFAFA}
+.ph-left .ph-ws{font-size:11px;color:var(--text-3);font-family:'DM Mono',monospace;margin-bottom:3px}
+.ph-left .ph-name{font-size:15px;font-weight:700;color:var(--text-1)}
+.ph-chevron{font-size:18px;color:var(--text-4);transition:transform 0.2s}
+.ph-chevron.open{transform:rotate(180deg)}
+.prog-sessions{border-top:1px solid var(--border);display:none}
+.prog-sessions.open{display:block}
+.session-row{
+  display:grid;grid-template-columns:80px 1fr 120px 100px 80px;
+  align-items:center;gap:12px;
+  padding:11px 20px;border-bottom:1px solid var(--border);
+}
+.session-row:last-child{border-bottom:none}
+.session-row:hover{background:#FAFAFA}
+.sr-day{font-family:'DM Mono',monospace;font-size:11px;color:var(--text-3)}
+.sr-title{font-size:13px;font-weight:600;color:var(--text-1)}
+.sr-time{font-family:'DM Mono',monospace;font-size:12px;color:var(--text-3)}
+
+/* ── Enrollment table ── */
+.filter-bar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.filter-chip{
+  padding:5px 12px;border-radius:100px;font-size:12px;font-weight:500;
+  border:1px solid var(--border);background:var(--surface);color:var(--text-2);
+  cursor:pointer;transition:all 0.12s;
+}
+.filter-chip.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+
+/* ── Progress bar ── */
+.progress-bar{height:6px;background:var(--border);border-radius:100px;overflow:hidden;margin-top:6px}
+.progress-fill{height:100%;background:var(--blue);border-radius:100px}
+
+/* ── Today at a glance ── */
+.today-list{display:flex;flex-direction:column;gap:0}
+.today-item{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 0;border-bottom:1px solid var(--border);
+}
+.today-item:last-child{border-bottom:none}
+.today-time{font-family:'DM Mono',monospace;font-size:11px;color:var(--text-3);min-width:44px}
+.today-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.today-info .ti-title{font-size:13px;font-weight:600;color:var(--text-1)}
+.today-info .ti-sub{font-size:11px;color:var(--text-3);margin-top:1px}
+
+/* ── Attendance mini chart ── */
+.att-row{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.att-row:last-child{margin-bottom:0}
+.att-label{font-size:12px;color:var(--text-2);min-width:120px;font-weight:500}
+.att-bar-wrap{flex:1;height:8px;background:var(--border);border-radius:100px;overflow:hidden}
+.att-bar{height:100%;border-radius:100px}
+.att-pct{font-family:'DM Mono',monospace;font-size:11px;color:var(--text-3);min-width:34px;text-align:right}
+
+/* ── Action icon buttons ── */
+.icon-btn{
+  width:30px;height:30px;border-radius:6px;border:1px solid var(--border);
+  background:var(--surface);cursor:pointer;display:inline-flex;
+  align-items:center;justify-content:center;font-size:14px;
+  transition:background 0.12s;
+}
+.icon-btn:hover{background:var(--bg)}
+
+/* ── Empty state ── */
+.empty{padding:48px 24px;text-align:center;color:var(--text-4)}
+.empty .e-icon{font-size:36px;margin-bottom:12px}
+.empty .e-msg{font-size:14px;font-weight:500;color:var(--text-3)}
+.empty .e-sub{font-size:12px;margin-top:4px}
+
+/* ── Section heading ── */
+.section-heading{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:16px;
+}
+.section-heading h2{font-size:15px;font-weight:700;color:var(--text-1)}
+.section-heading p{font-size:12px;color:var(--text-3);margin-top:2px}
+
+/* scrollbar */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:10px}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-mark">🎓</div>
+      <div>
+        <div class="logo-text">TrainDesk</div>
+        <div class="logo-sub">Admin Portal</div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Main</div>
+      <div class="nav-item active" onclick="navigate('overview', this)">
+        <span class="icon">📊</span> Overview
+      </div>
+      <div class="nav-item" onclick="navigate('rooms', this)">
+        <span class="icon">🏨</span> Conference Rooms
+      </div>
+      <div class="nav-item" onclick="navigate('workshops', this)">
+        <span class="icon">🗂️</span> Workshops
+        <span class="badge">3</span>
+      </div>
+      <div class="nav-item" onclick="navigate('programs', this)">
+        <span class="icon">📚</span> Programs & Sessions
+      </div>
+      <div class="nav-item" onclick="navigate('enrollments', this)">
+        <span class="icon">👥</span> Enrollments
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Settings</div>
+      <div class="nav-item">
+        <span class="icon">👤</span> Trainers
+      </div>
+      <div class="nav-item">
+        <span class="icon">🏢</span> Client Companies
+      </div>
+      <div class="nav-item">
+        <span class="icon">⚙️</span> Settings
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="user-row">
+        <div class="avatar">JD</div>
+        <div class="user-info">
+          <div class="u-name">James D.</div>
+          <div class="u-role">Administrator</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── Main Content ── -->
+  <div class="main">
+
+    <!-- Topbar -->
+    <div class="topbar">
+      <div>
+        <div class="page-title" id="pageTitle">Overview</div>
+        <div class="page-sub" id="pageSub">Wednesday, June 25, 2025</div>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn btn-ghost btn-sm">⬇ Export</button>
+        <button class="btn btn-primary btn-sm" onclick="alert('Open create modal')">+ New Workshop</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ════════════════════════════════════════ -->
+      <!-- VIEW: Overview -->
+      <!-- ════════════════════════════════════════ -->
+      <div class="view active" id="view-overview">
+
+        <!-- Stat cards -->
+        <div class="stat-grid">
+          <div class="stat-card">
+            <div class="s-icon" style="background:#EFF6FF">🗂️</div>
+            <div class="s-label">Active Workshops</div>
+            <div class="s-value">3</div>
+            <div class="s-delta up">↑ 2 this month</div>
+          </div>
+          <div class="stat-card">
+            <div class="s-icon" style="background:#ECFDF5">👥</div>
+            <div class="s-label">Total Enrollments</div>
+            <div class="s-value">127</div>
+            <div class="s-delta up">↑ 18 this week</div>
+          </div>
+          <div class="stat-card">
+            <div class="s-icon" style="background:#FFFBEB">🏨</div>
+            <div class="s-label">Rooms in Use</div>
+            <div class="s-value">2 / 5</div>
+            <div class="s-delta">3 available today</div>
+          </div>
+          <div class="stat-card">
+            <div class="s-icon" style="background:#F5F3FF">✅</div>
+            <div class="s-label">Avg. Attendance</div>
+            <div class="s-value">87%</div>
+            <div class="s-delta up">↑ 4% vs last month</div>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <!-- Today's schedule -->
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <div class="panel-title">Today's Sessions</div>
+                <div class="panel-sub">Wednesday, June 25</div>
+              </div>
+              <span class="pill pill-green"><span class="dot"></span> 2 ongoing</span>
+            </div>
+            <div class="panel-body">
+              <div class="today-list">
+                <div class="today-item">
+                  <div class="today-time">08:00</div>
+                  <div class="today-dot" style="background:var(--green)"></div>
+                  <div class="today-info">
+                    <div class="ti-title">Module 1 — Project Planning</div>
+                    <div class="ti-sub">Ballroom B · Maria Santos · 24 participants</div>
+                  </div>
+                  <span class="pill pill-green" style="margin-left:auto">Ongoing</span>
+                </div>
+                <div class="today-item">
+                  <div class="today-time">09:30</div>
+                  <div class="today-dot" style="background:var(--green)"></div>
+                  <div class="today-info">
+                    <div class="ti-title">Safety Fundamentals — Day 2</div>
+                    <div class="ti-sub">Function Room 1 · Rico Cruz · 18 participants</div>
+                  </div>
+                  <span class="pill pill-green" style="margin-left:auto">Ongoing</span>
+                </div>
+                <div class="today-item">
+                  <div class="today-time">13:00</div>
+                  <div class="today-dot" style="background:var(--amber)"></div>
+                  <div class="today-info">
+                    <div class="ti-title">Leadership Essentials</div>
+                    <div class="ti-sub">Boardroom A · Ana Reyes · 12 participants</div>
+                  </div>
+                  <span class="pill pill-amber" style="margin-left:auto">Starting soon</span>
+                </div>
+                <div class="today-item">
+                  <div class="today-time">14:00</div>
+                  <div class="today-dot" style="background:var(--text-4)"></div>
+                  <div class="today-info">
+                    <div class="ti-title">Module 2 — Risk Management</div>
+                    <div class="ti-sub">Ballroom B · Maria Santos · 24 participants</div>
+                  </div>
+                  <span class="pill pill-gray" style="margin-left:auto">Upcoming</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Attendance by workshop -->
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <div class="panel-title">Attendance Rate</div>
+                <div class="panel-sub">Active workshops this month</div>
+              </div>
+            </div>
+            <div class="panel-body">
+              <div class="att-row">
+                <div class="att-label">PM Workshop</div>
+                <div class="att-bar-wrap"><div class="att-bar" style="width:92%;background:var(--green)"></div></div>
+                <div class="att-pct">92%</div>
+              </div>
+              <div class="att-row">
+                <div class="att-label">Safety Training</div>
+                <div class="att-bar-wrap"><div class="att-bar" style="width:85%;background:var(--blue)"></div></div>
+                <div class="att-pct">85%</div>
+              </div>
+              <div class="att-row">
+                <div class="att-label">Leadership Series</div>
+                <div class="att-bar-wrap"><div class="att-bar" style="width:78%;background:var(--indigo)"></div></div>
+                <div class="att-pct">78%</div>
+              </div>
+              <div class="att-row">
+                <div class="att-label">HR Fundamentals</div>
+                <div class="att-bar-wrap"><div class="att-bar" style="width:95%;background:var(--green)"></div></div>
+                <div class="att-pct">95%</div>
+              </div>
+              <div class="att-row">
+                <div class="att-label">Digital Literacy</div>
+                <div class="att-bar-wrap"><div class="att-bar" style="width:61%;background:var(--amber)"></div></div>
+                <div class="att-pct">61%</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent enrollments -->
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Recent Enrollments</div>
+              <div class="panel-sub">Last 7 days</div>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="navigate('enrollments', document.querySelector('[onclick*=enrollments]'))">View all</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Trainee</th>
+                  <th>Workshop</th>
+                  <th>Company</th>
+                  <th>Enrolled</th>
+                  <th>Type</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="td-primary">Ana Mercado</span></td>
+                  <td>PM Workshop — Batch 4</td>
+                  <td>Pacific Corp</td>
+                  <td style="font-family:'DM Mono',monospace;font-size:12px">Jun 23</td>
+                  <td><span class="pill pill-blue">Company</span></td>
+                  <td><span class="pill pill-green"><span class="dot"></span> Confirmed</span></td>
+                </tr>
+                <tr>
+                  <td><span class="td-primary">Ben Ramos</span></td>
+                  <td>Safety Training — June</td>
+                  <td>IndyCo Ltd.</td>
+                  <td style="font-family:'DM Mono',monospace;font-size:12px">Jun 22</td>
+                  <td><span class="pill pill-blue">Company</span></td>
+                  <td><span class="pill pill-green"><span class="dot"></span> Confirmed</span></td>
+                </tr>
+                <tr>
+                  <td><span class="td-primary">Carla Tan</span></td>
+                  <td>Leadership Series</td>
+                  <td>—</td>
+                  <td style="font-family:'DM Mono',monospace;font-size:12px">Jun 22</td>
+                  <td><span class="pill pill-purple">Self</span></td>
+                  <td><span class="pill pill-amber">Pending payment</span></td>
+                </tr>
+                <tr>
+                  <td><span class="td-primary">Diego Lim</span></td>
+                  <td>PM Workshop — Batch 4</td>
+                  <td>Pacific Corp</td>
+                  <td style="font-family:'DM Mono',monospace;font-size:12px">Jun 21</td>
+                  <td><span class="pill pill-blue">Company</span></td>
+                  <td><span class="pill pill-green"><span class="dot"></span> Confirmed</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ════════════════════════════════════════ -->
+      <!-- VIEW: Conference Rooms -->
+      <!-- ════════════════════════════════════════ -->
+      <div class="view" id="view-rooms">
+        <div class="section-heading">
+          <div>
+            <h2>Conference Rooms</h2>
+            <p>5 rooms across 3 venues</p>
+          </div>
+          <button class="btn btn-primary btn-sm">+ Add Room</button>
+        </div>
+        <div class="room-grid">
+
+          <div class="room-card">
+            <div class="rc-status"><span class="pill pill-green"><span class="dot"></span> In use</span></div>
+            <div class="rc-venue">🏨 Seda Hotel BGC</div>
+            <div class="rc-name">Ballroom B</div>
+            <div class="rc-capacity">👥 Capacity: 40 pax · 3rd Floor</div>
+            <div class="rc-workshop">
+              <div class="rc-ws-title">PM Workshop — Batch 4</div>
+              <div class="rc-ws-dates">Jun 24 – Jun 27, 2025</div>
+            </div>
+          </div>
+
+          <div class="room-card">
+            <div class="rc-status"><span class="pill pill-green"><span class="dot"></span> In use</span></div>
+            <div class="rc-venue">🏨 Seda Hotel BGC</div>
+            <div class="rc-name">Function Room 1</div>
+            <div class="rc-capacity">👥 Capacity: 25 pax · 2nd Floor</div>
+            <div class="rc-workshop">
+              <div class="rc-ws-title">Safety Training — June</div>
+              <div class="rc-ws-dates">Jun 25 – Jun 26, 2025</div>
+            </div>
+          </div>
+
+          <div class="room-card">
+            <div class="rc-status"><span class="pill pill-gray">Available</span></div>
+            <div class="rc-venue">🏨 Marriott Manila</div>
+            <div class="rc-name">Boardroom A</div>
+            <div class="rc-capacity">👥 Capacity: 20 pax · Mezzanine</div>
+            <div class="rc-empty">No workshop scheduled</div>
+          </div>
+
+          <div class="room-card">
+            <div class="rc-status"><span class="pill pill-amber">Booked soon</span></div>
+            <div class="rc-venue">🏨 Marriott Manila</div>
+            <div class="rc-name">Grand Salon</div>
+            <div class="rc-capacity">👥 Capacity: 60 pax · Lobby Level</div>
+            <div class="rc-workshop">
+              <div class="rc-ws-title">Leadership Series — July</div>
+              <div class="rc-ws-dates">Jul 7 – Jul 9, 2025</div>
+            </div>
+          </div>
+
+          <div class="room-card">
+            <div class="rc-status"><span class="pill pill-gray">Available</span></div>
+            <div class="rc-venue">🏨 Marco Polo Ortigas</div>
+            <div class="rc-name">Conference Room C</div>
+            <div class="rc-capacity">👥 Capacity: 30 pax · 4th Floor</div>
+            <div class="rc-empty">No workshop scheduled</div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ════════════════════════════════════════ -->
+      <!-- VIEW: Workshops -->
+      <!-- ════════════════════════════════════════ -->
+      <div class="view" id="view-workshops">
+        <div class="section-heading">
+          <div>
+            <h2>Workshops</h2>
+            <p>All scheduled workshop events</p>
+          </div>
+          <button class="btn btn-primary btn-sm">+ New Workshop</button>
+        </div>
+
+        <div class="filter-bar">
+          <div class="filter-chip active">All</div>
+          <div class="filter-chip">Ongoing</div>
+          <div class="filter-chip">Upcoming</div>
+          <div class="filter-chip">Completed</div>
+          <div class="filter-chip">Cancelled</div>
+        </div>
+
+        <div class="ws-list">
+
+          <div class="ws-card">
+            <div class="ws-date-col">
+              <div class="wsd-month">JUN</div>
+              <div class="wsd-day">24</div>
+            </div>
+            <div class="ws-info">
+              <div class="wi-room">🏨 Seda BGC · Ballroom B</div>
+              <div class="wi-title">PM Workshop — Batch 4</div>
+              <div class="wi-meta">
+                <span>📅 <strong>Jun 24 – 27, 2025</strong> (4 days)</span>
+                <span>👤 Trainer: <strong>Maria Santos</strong></span>
+                <span>🏢 Client: <strong>Pacific Corp</strong></span>
+                <span>👥 <strong>24</strong> enrolled</span>
+              </div>
+              <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+                <span class="pill pill-green"><span class="dot"></span> Ongoing</span>
+                <span class="pill pill-blue">1 Program · 8 Sessions</span>
+              </div>
+            </div>
+            <div class="ws-actions">
+              <button class="btn btn-ghost btn-sm">View</button>
+              <button class="icon-btn" title="Display page">📺</button>
+            </div>
+          </div>
+
+          <div class="ws-card">
+            <div class="ws-date-col">
+              <div class="wsd-month">JUN</div>
+              <div class="wsd-day">25</div>
+            </div>
+            <div class="ws-info">
+              <div class="wi-room">🏨 Seda BGC · Function Room 1</div>
+              <div class="wi-title">Safety Training — June</div>
+              <div class="wi-meta">
+                <span>📅 <strong>Jun 25 – 26, 2025</strong> (2 days)</span>
+                <span>👤 Trainer: <strong>Rico Cruz</strong></span>
+                <span>🏢 Client: <strong>IndyCo Ltd.</strong></span>
+                <span>👥 <strong>18</strong> enrolled</span>
+              </div>
+              <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+                <span class="pill pill-green"><span class="dot"></span> Ongoing</span>
+                <span class="pill pill-blue">1 Program · 4 Sessions</span>
+              </div>
+            </div>
+            <div class="ws-actions">
+              <button class="btn btn-ghost btn-sm">View</button>
+              <button class="icon-btn" title="Display page">📺</button>
+            </div>
+          </div>
+
+          <div class="ws-card">
+            <div class="ws-date-col">
+              <div class="wsd-month">JUL</div>
+              <div class="wsd-day">7</div>
+            </div>
+            <div class="ws-info">
+              <div class="wi-room">🏨 Marriott Manila · Grand Salon</div>
+              <div class="wi-title">Leadership Series — July</div>
+              <div class="wi-meta">
+                <span>📅 <strong>Jul 7 – 9, 2025</strong> (3 days)</span>
+                <span>👤 Trainer: <strong>Ana Reyes</strong></span>
+                <span>🏢 Client: <strong>Mixed / Self-enrolled</strong></span>
+                <span>👥 <strong>12</strong> enrolled · <strong>8</strong> slots left</span>
+              </div>
+              <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+                <span class="pill pill-amber">Upcoming</span>
+                <span class="pill pill-blue">2 Programs · 6 Sessions</span>
+              </div>
+            </div>
+            <div class="ws-actions">
+              <button class="btn btn-ghost btn-sm">View</button>
+              <button class="icon-btn" title="Display page">📺</button>
+            </div>
+          </div>
+
+          <div class="ws-card" style="opacity:0.6">
+            <div class="ws-date-col">
+              <div class="wsd-month">MAY</div>
+              <div class="wsd-day">12</div>
+            </div>
+            <div class="ws-info">
+              <div class="wi-room">🏨 Marco Polo · Conference Room C</div>
+              <div class="wi-title">HR Fundamentals — May</div>
+              <div class="wi-meta">
+                <span>📅 <strong>May 12 – 13, 2025</strong> (2 days)</span>
+                <span>👤 Trainer: <strong>Liza Ocampo</strong></span>
+                <span>🏢 Client: <strong>BrightPath Inc.</strong></span>
+                <span>👥 <strong>22</strong> enrolled</span>
+              </div>
+              <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+                <span class="pill pill-gray">Completed</span>
+                <span class="pill pill-gray">Attendance: 95%</span>
+              </div>
+            </div>
+            <div class="ws-actions">
+              <button class="btn btn-ghost btn-sm">View</button>
+              <button class="icon-btn">📄</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ════════════════════════════════════════ -->
+      <!-- VIEW: Programs & Sessions -->
+      <!-- ════════════════════════════════════════ -->
+      <div class="view" id="view-programs">
+        <div class="section-heading">
+          <div>
+            <h2>Programs & Sessions</h2>
+            <p>Curriculum organized by workshop</p>
+          </div>
+          <button class="btn btn-primary btn-sm">+ New Program</button>
+        </div>
+
+        <!-- Program 1 -->
+        <div class="prog-card">
+          <div class="prog-header" onclick="toggleProg(this)">
+            <div class="ph-left">
+              <div class="ph-ws">PM Workshop — Batch 4 · Jun 24–27</div>
+              <div class="ph-name">Project Management Fundamentals</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px">
+              <span class="pill pill-blue">8 sessions</span>
+              <span class="pill pill-green">Ongoing</span>
+              <span class="ph-chevron">⌄</span>
+            </div>
+          </div>
+          <div class="prog-sessions">
+            <div style="display:grid;grid-template-columns:80px 1fr 120px 100px 80px;gap:12px;padding:8px 20px;background:var(--bg);border-bottom:1px solid var(--border)">
+              <div style="font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.06em">Day</div>
+              <div style="font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.06em">Session</div>
+              <div style="font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.06em">Time</div>
+              <div style="font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.06em">Status</div>
+              <div></div>
+            </div>
+            <div class="session-row">
+              <div class="sr-day">Day 1</div>
+              <div class="sr-title">Module 1 — Project Planning</div>
+              <div class="sr-time">08:00 – 12:00</div>
+              <span class="pill pill-green">Done</span>
+              <button class="icon-btn">✏️</button>
+            </div>
+            <div class="session-row">
+              <div class="sr-day">Day 1</div>
+              <div class="sr-title">Module 2 — Scope & WBS</div>
+              <div class="sr-time">13:00 – 17:00</div>
+              <span class="pill pill-green">Done</span>
+              <button class="icon-btn">✏️</button>
+            </div>
+            <div class="session-row" style="background:#FFFBEB">
+              <div class="sr-day">Day 2</div>
+              <div class="sr-title">Module 3 — Risk Management</div>
+              <div class="sr-time">08:00 – 12:00</div>
+              <span class="pill pill-green"><span class="dot"></span> Ongoing</span>
+              <button class="icon-btn">✏️</button>
+            </div>
+            <div class="session-row">
+              <div class="sr-day">Day 2</div>
+              <div class="sr-title">Module 4 — Scheduling</div>
+              <div class="sr-time">13:00 – 17:00</div>
+              <span class="pill pill-gray">Upcoming</span>
+              <button class="icon-btn">✏️</button>
+            </div>
+            <div class="session-row">
+              <div class="sr-day">Day 3</div>
+              <div class="sr-title">Module 5 — Cost Estimation</div>
+              <div class="sr-time">08:00 – 12:00</div>
+              <span class="pill pill-gray">Upcoming</span>
+              <button class="icon-btn">✏️</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Program 2 -->
+        <div class="prog-card">
+          <div class="prog-header" onclick="toggleProg(this)">
+            <div class="ph-left">
+              <div class="ph-ws">Safety Training — June · Jun 25–26</div>
+              <div class="ph-name">Workplace Safety & Compliance</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px">
+              <span class="pill pill-blue">4 sessions</span>
+              <span class="pill pill-green">Ongoing</span>
+              <span class="ph-chevron">⌄</span>
+            </div>
+          </div>
+          <div class="prog-sessions">
+            <div style="display:grid;grid-template-columns:80px 1fr 120px 100px 80px;gap:12px;padding:8px 20px;background:var(--bg);border-bottom:1px solid var(--border)">
+              <div style="font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.06em">Day</div>
+              <div style="font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.06em">Session</div>
+              <div style="font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.06em">Time</div>
+              <div style="font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.06em">Status</div>
+              <div></div>
+            </div>
+            <div class="session-row">
+              <div class="sr-day">Day 1</div>
+              <div class="sr-title">Safety Regulations Overview</div>
+              <div class="sr-time">08:00 – 11:00</div>
+              <span class="pill pill-green">Done</span>
+              <button class="icon-btn">✏️</button>
+            </div>
+            <div class="session-row" style="background:#FFFBEB">
+              <div class="sr-day">Day 1</div>
+              <div class="sr-title">Hazard Identification</div>
+              <div class="sr-time">13:00 – 17:00</div>
+              <span class="pill pill-green"><span class="dot"></span> Ongoing</span>
+              <button class="icon-btn">✏️</button>
+            </div>
+            <div class="session-row">
+              <div class="sr-day">Day 2</div>
+              <div class="sr-title">Emergency Response</div>
+              <div class="sr-time">08:00 – 12:00</div>
+              <span class="pill pill-gray">Upcoming</span>
+              <button class="icon-btn">✏️</button>
+            </div>
+            <div class="session-row">
+              <div class="sr-day">Day 2</div>
+              <div class="sr-title">Practical Assessment</div>
+              <div class="sr-time">13:00 – 16:00</div>
+              <span class="pill pill-gray">Upcoming</span>
+              <button class="icon-btn">✏️</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Program 3 -->
+        <div class="prog-card">
+          <div class="prog-header" onclick="toggleProg(this)">
+            <div class="ph-left">
+              <div class="ph-ws">Leadership Series — July · Jul 7–9</div>
+              <div class="ph-name">Effective Leadership & Team Building</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px">
+              <span class="pill pill-blue">6 sessions</span>
+              <span class="pill pill-amber">Upcoming</span>
+              <span class="ph-chevron">⌄</span>
+            </div>
+          </div>
+          <div class="prog-sessions">
+            <div class="session-row">
+              <div class="sr-day">Day 1</div>
+              <div class="sr-title">Leadership Styles</div>
+              <div class="sr-time">09:00 – 12:00</div>
+              <span class="pill pill-gray">Upcoming</span>
+              <button class="icon-btn">✏️</button>
+            </div>
+            <div class="session-row">
+              <div class="sr-day">Day 1</div>
+              <div class="sr-title">Communication & Influence</div>
+              <div class="sr-time">13:00 – 17:00</div>
+              <span class="pill pill-gray">Upcoming</span>
+              <button class="icon-btn">✏️</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ════════════════════════════════════════ -->
+      <!-- VIEW: Enrollments & Attendance -->
+      <!-- ════════════════════════════════════════ -->
+      <div class="view" id="view-enrollments">
+        <div class="section-heading">
+          <div>
+            <h2>Enrollments & Attendance</h2>
+            <p>127 total enrollments across all workshops</p>
+          </div>
+          <button class="btn btn-primary btn-sm">+ Enroll Trainee</button>
+        </div>
+
+        <div class="filter-bar">
+          <div class="filter-chip active">All</div>
+          <div class="filter-chip">Confirmed</div>
+          <div class="filter-chip">Pending payment</div>
+          <div class="filter-chip">Waitlisted</div>
+          <div class="filter-chip">Company-sponsored</div>
+          <div class="filter-chip">Self-enrolled</div>
+        </div>
+
+        <div class="panel">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Trainee</th>
+                  <th>Workshop</th>
+                  <th>Program</th>
+                  <th>Company</th>
+                  <th>Type</th>
+                  <th>Payment</th>
+                  <th>Attendance</th>
+                  <th>Status</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="td-primary">Ana Mercado</span></td>
+                  <td>PM Workshop Batch 4</td>
+                  <td>PM Fundamentals</td>
+                  <td>Pacific Corp</td>
+                  <td><span class="pill pill-blue">Company</span></td>
+                  <td><span class="pill pill-green">Paid</span></td>
+                  <td>
+                    <div style="font-size:12px;color:var(--text-2)">4 / 8</div>
+                    <div class="progress-bar"><div class="progress-fill" style="width:50%"></div></div>
+                  </td>
+                  <td><span class="pill pill-green"><span class="dot"></span> Active</span></td>
+                  <td><button class="icon-btn">✏️</button></td>
+                </tr>
+                <tr>
+                  <td><span class="td-primary">Ben Ramos</span></td>
+                  <td>Safety Training June</td>
+                  <td>Workplace Safety</td>
+                  <td>IndyCo Ltd.</td>
+                  <td><span class="pill pill-blue">Company</span></td>
+                  <td><span class="pill pill-green">Paid</span></td>
+                  <td>
+                    <div style="font-size:12px;color:var(--text-2)">2 / 4</div>
+                    <div class="progress-bar"><div class="progress-fill" style="width:50%"></div></div>
+                  </td>
+                  <td><span class="pill pill-green"><span class="dot"></span> Active</span></td>
+                  <td><button class="icon-btn">✏️</button></td>
+                </tr>
+                <tr>
+                  <td><span class="td-primary">Carla Tan</span></td>
+                  <td>Leadership Series July</td>
+                  <td>Effective Leadership</td>
+                  <td>—</td>
+                  <td><span class="pill pill-purple">Self</span></td>
+                  <td><span class="pill pill-amber">Pending</span></td>
+                  <td>
+                    <div style="font-size:12px;color:var(--text-4)">Not started</div>
+                  </td>
+                  <td><span class="pill pill-amber">Pending</span></td>
+                  <td><button class="icon-btn">✏️</button></td>
+                </tr>
+                <tr>
+                  <td><span class="td-primary">Diego Lim</span></td>
+                  <td>PM Workshop Batch 4</td>
+                  <td>PM Fundamentals</td>
+                  <td>Pacific Corp</td>
+                  <td><span class="pill pill-blue">Company</span></td>
+                  <td><span class="pill pill-green">Paid</span></td>
+                  <td>
+                    <div style="font-size:12px;color:var(--text-2)">4 / 8</div>
+                    <div class="progress-bar"><div class="progress-fill" style="width:50%"></div></div>
+                  </td>
+                  <td><span class="pill pill-green"><span class="dot"></span> Active</span></td>
+                  <td><button class="icon-btn">✏️</button></td>
+                </tr>
+                <tr>
+                  <td><span class="td-primary">Eva Santos</span></td>
+                  <td>PM Workshop Batch 4</td>
+                  <td>PM Fundamentals</td>
+                  <td>Pacific Corp</td>
+                  <td><span class="pill pill-blue">Company</span></td>
+                  <td><span class="pill pill-green">Paid</span></td>
+                  <td>
+                    <div style="font-size:12px;color:var(--text-2)">3 / 8</div>
+                    <div class="progress-bar"><div class="progress-fill" style="width:38%;background:var(--amber)"></div></div>
+                  </td>
+                  <td><span class="pill pill-red">Absent ×2</span></td>
+                  <td><button class="icon-btn">✏️</button></td>
+                </tr>
+                <tr>
+                  <td><span class="td-primary">Felix Cruz</span></td>
+                  <td>Leadership Series July</td>
+                  <td>Effective Leadership</td>
+                  <td>BrightPath Inc.</td>
+                  <td><span class="pill pill-blue">Company</span></td>
+                  <td><span class="pill pill-green">Paid</span></td>
+                  <td>
+                    <div style="font-size:12px;color:var(--text-4)">Not started</div>
+                  </td>
+                  <td><span class="pill pill-gray">Upcoming</span></td>
+                  <td><button class="icon-btn">✏️</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /shell -->
+
+<script>
+const views = {
+  overview:    { title: 'Overview',               sub: 'Wednesday, June 25, 2025' },
+  rooms:       { title: 'Conference Rooms',        sub: '5 rooms across 3 venues' },
+  workshops:   { title: 'Workshops',               sub: 'All scheduled events' },
+  programs:    { title: 'Programs & Sessions',     sub: 'Curriculum organized by workshop' },
+  enrollments: { title: 'Enrollments & Attendance',sub: '127 total enrollments' },
+};
+
+function navigate(id, el) {
+  // hide all views
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  // show target
+  document.getElementById('view-' + id).classList.add('active');
+  if (el) el.classList.add('active');
+  // update topbar
+  const v = views[id];
+  document.getElementById('pageTitle').textContent = v.title;
+  document.getElementById('pageSub').textContent   = v.sub;
+}
+
+function toggleProg(header) {
+  const sessions = header.nextElementSibling;
+  const chevron  = header.querySelector('.ph-chevron');
+  sessions.classList.toggle('open');
+  chevron.classList.toggle('open');
+}
+
+// Filter chips (visual only)
+document.querySelectorAll('.filter-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    chip.closest('.filter-bar').querySelectorAll('.filter-chip')
+      .forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>

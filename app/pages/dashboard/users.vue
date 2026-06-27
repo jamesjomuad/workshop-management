@@ -44,7 +44,7 @@
 <script setup lang="ts">
 import type { User } from '~/types'
 
-definePageMeta({ layout: 'admin', middleware: 'auth' })
+definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
 const { users, pending } = useUsers()
 const search = ref('')

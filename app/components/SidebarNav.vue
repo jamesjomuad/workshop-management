@@ -31,8 +31,8 @@ const { logout } = useAuth()
 
 const items = [
   { title: 'Dashboard', icon: 'mdi-view-dashboard', to: '/dashboard' },
-  { title: 'Users', icon: 'mdi-account-group', to: '/users' },
-  { title: 'Settings', icon: 'mdi-cog', to: '/settings' },
+  { title: 'Users', icon: 'mdi-account-group', to: '/dashboard/users' },
+  { title: 'Settings', icon: 'mdi-cog', to: '/dashboard/settings' },
 ]
 
 async function handleLogout() {

@@ -6,12 +6,13 @@
       :temporary="isMobile"
       :rail="rail && !isMobile"
       app
+      z-index="1004"
       @click="rail = false"
     >
       <template #prepend>
         <v-list-item
           class="pa-4"
-          title="Admin Panel"
+          title="Dashboard"
           subtitle="Workshop"
           prepend-icon="mdi-shield-crown"
         />
@@ -32,7 +33,6 @@
         <slot />
       </v-container>
     </v-main>
-    <AppFooter />
   </v-app>
 </template>
 
@@ -53,8 +53,8 @@ onUnmounted(() => window.removeEventListener('resize', onResize))
 const pageTitle = computed(() => {
   const map: Record<string, string> = {
     '/dashboard': 'Dashboard',
-    '/users': 'Users',
-    '/settings': 'Settings',
+    '/dashboard/users': 'Users',
+    '/dashboard/settings': 'Settings',
   }
   return map[route.path] || 'Admin'
 })

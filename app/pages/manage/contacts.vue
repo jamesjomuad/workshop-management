@@ -6,23 +6,41 @@
         <div class="text-caption text-medium-emphasis mt-1">{{ companies?.length ?? 0 }} companies · {{ contacts?.length ?? 0 }} people</div>
       </div>
       <v-spacer />
-      <v-btn color="primary" prepend-icon="mdi-plus" @click="openContactDialog()">Add Contact</v-btn>
-      <v-btn variant="outlined" prepend-icon="mdi-domain" class="ml-2" @click="openCompanyDialog()">Add Company</v-btn>
+      <v-btn
+        v-if="tab === 'contacts'"
+        color="primary"
+        prepend-icon="mdi-plus"
+        @click="openContactDialog()"
+      >Add Contact</v-btn>
+      <v-btn
+        v-if="tab === 'companies'"
+        color="primary"
+        prepend-icon="mdi-plus"
+        @click="openCompanyDialog()"
+      >Add Company</v-btn>
     </div>
 
-    <v-text-field
-      v-model="search"
-      prepend-inner-icon="mdi-magnify"
-      label="Search contacts..."
-      variant="outlined"
-      density="comfortable"
-      hide-details
-      clearable
-      class="mb-4"
-    />
-
     <v-card variant="outlined" rounded="lg">
+      <v-tabs v-model="tab" color="primary" class="px-4 pt-2">
+        <v-tab value="contacts" prepend-icon="mdi-account-multiple">Contacts</v-tab>
+        <v-tab value="companies" prepend-icon="mdi-domain">Companies</v-tab>
+      </v-tabs>
+      <v-divider />
+
+      <v-text-field
+        v-if="tab === 'contacts'"
+        v-model="search"
+        prepend-inner-icon="mdi-magnify"
+        label="Search contacts..."
+        variant="outlined"
+        density="comfortable"
+        hide-details
+        clearable
+        class="pa-4 pb-0"
+      />
+
       <v-data-table
+        v-if="tab === 'contacts'"
         :headers="contactHeaders"
         :items="filteredContacts"
         :loading="loading"
@@ -50,6 +68,71 @@
               <v-icon size="18">mdi-delete</v-icon>
             </v-btn>
           </div>
+        </template>
+      </v-data-table>
+
+      <v-data-table
+        v-if="tab === 'companies'"
+        :headers="companyHeaders"
+        :items="companies ?? []"
+        :loading="loading"
+        show-expand
+        item-value="id"
+        density="comfortable"
+      >
+        <template #item.contact_email="{ value }">
+          <span class="text-body-2">{{ value || '—' }}</span>
+        </template>
+        <template #item.contact_phone="{ value }">
+          <span class="text-body-2">{{ value || '—' }}</span>
+        </template>
+        <template #item.contacts="{ item }">
+          <span class="text-body-2">{{ contactCount(item.id) }}</span>
+        </template>
+        <template #item.actions="{ item }">
+          <div class="d-flex ga-1">
+            <v-btn icon variant="text" size="small" color="primary" @click="openContactDialog(item.id)">
+              <v-icon size="18">mdi-account-plus</v-icon>
+            </v-btn>
+            <v-btn icon variant="text" size="small" @click="openCompanyDialog(item)">
+              <v-icon size="18">mdi-pencil</v-icon>
+            </v-btn>
+            <v-btn icon variant="text" size="small" color="error" @click="confirmDeleteCompany(item)">
+              <v-icon size="18">mdi-delete</v-icon>
+            </v-btn>
+          </div>
+        </template>
+        <template #expanded-row="{ item }">
+          <tr>
+            <td :colspan="companyHeaders.length + 1" class="pa-4 bg-grey-lighten-5">
+              <div class="d-flex align-center mb-2">
+                <span class="text-body-2 font-weight-bold">Contacts</span>
+                <v-spacer />
+                <v-btn variant="outlined" size="x-small" prepend-icon="mdi-plus" @click="openContactDialog(item.id)">Add contact</v-btn>
+              </div>
+              <v-data-table
+                :headers="contactSubHeaders"
+                :items="companyContacts(item.id)"
+                density="compact"
+                hide-default-footer
+                class="contact-subtable"
+              >
+                <template #item.full_name="{ item: c }">
+                  {{ c.first_name }} {{ c.last_name }}
+                </template>
+                <template #item.actions="{ item: c }">
+                  <div class="d-flex ga-1">
+                    <v-btn icon variant="text" size="x-small" @click="openContactDialog(item.id, c)">
+                      <v-icon size="16">mdi-pencil</v-icon>
+                    </v-btn>
+                    <v-btn icon variant="text" size="x-small" color="error" @click="confirmDeleteContact(c)">
+                      <v-icon size="16">mdi-delete</v-icon>
+                    </v-btn>
+                  </div>
+                </template>
+              </v-data-table>
+            </td>
+          </tr>
         </template>
       </v-data-table>
     </v-card>
@@ -135,6 +218,7 @@ const { companies, pending: coPending, refresh: refreshCompanies, createCompany,
 const { contacts, pending: ctPending, refresh: refreshContacts, createContact, updateContact, deleteContact } = useContacts()
 
 const loading = computed(() => coPending.value || ctPending.value)
+const tab = ref('contacts')
 const search = ref('')
 
 const contactHeaders = [
@@ -163,6 +247,30 @@ function initials(c: Contact) {
   return (c.first_name[0] + c.last_name[0]).toUpperCase()
 }
 
+const companyHeaders = [
+  { title: 'Company', key: 'name', sortable: true },
+  { title: 'Email', key: 'contact_email', sortable: false },
+  { title: 'Phone', key: 'contact_phone', sortable: false },
+  { title: 'Contacts', key: 'contacts', sortable: false },
+  { title: 'Actions', key: 'actions', sortable: false, width: 136 },
+]
+
+const contactSubHeaders = [
+  { title: 'Name', key: 'full_name', sortable: true },
+  { title: 'Email', key: 'email', sortable: false },
+  { title: 'Phone', key: 'phone', sortable: false },
+  { title: 'Position', key: 'position', sortable: false },
+  { title: 'Actions', key: 'actions', sortable: false, width: 100 },
+]
+
+function contactCount(companyId: string) {
+  return contacts.value?.filter(c => c.company_id === companyId).length ?? 0
+}
+
+function companyContacts(companyId: string) {
+  return contacts.value?.filter(c => c.company_id === companyId) ?? []
+}
+
 const contactDialog = ref(false)
 const companyDialog = ref(false)
 const deleteDialog = ref(false)
@@ -175,19 +283,21 @@ const saving = ref(false)
 const companyForm = reactive({ name: '', contact_email: '', contact_phone: '' })
 const contactForm = reactive({ company_id: '', first_name: '', last_name: '', email: '', phone: '', position: '', notes: '' })
 
-function openContactDialog(item?: Contact) {
-  if (item) {
-    editingContact.value = item
-    contactForm.company_id = item.company_id ?? ''
-    contactForm.first_name = item.first_name
-    contactForm.last_name = item.last_name
-    contactForm.email = item.email ?? ''
-    contactForm.phone = item.phone ?? ''
-    contactForm.position = item.position ?? ''
-    contactForm.notes = item.notes ?? ''
+function openContactDialog(companyIdOrItem?: string | Contact, item?: Contact) {
+  const existing = item ?? (typeof companyIdOrItem === 'object' ? companyIdOrItem : undefined)
+  const coId = existing ? existing.company_id : (typeof companyIdOrItem === 'string' ? companyIdOrItem : '')
+  if (existing) {
+    editingContact.value = existing
+    contactForm.company_id = existing.company_id ?? ''
+    contactForm.first_name = existing.first_name
+    contactForm.last_name = existing.last_name
+    contactForm.email = existing.email ?? ''
+    contactForm.phone = existing.phone ?? ''
+    contactForm.position = existing.position ?? ''
+    contactForm.notes = existing.notes ?? ''
   } else {
     editingContact.value = null
-    contactForm.company_id = ''
+    contactForm.company_id = coId
     contactForm.first_name = ''
     contactForm.last_name = ''
     contactForm.email = ''

@@ -157,3 +157,17 @@ export interface Attendance {
   marked_at: string
   marked_by: string | null
 }
+
+export interface Contact {
+  id: string
+  company_id: string
+  first_name: string
+  last_name: string
+  email: string | null
+  phone: string | null
+  position: string | null
+  notes: string | null
+  company_name?: string
+  created_at: string
+  updated_at: string
+}

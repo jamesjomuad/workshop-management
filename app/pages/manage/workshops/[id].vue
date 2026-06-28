@@ -7,13 +7,14 @@
       <v-divider vertical class="align-self-stretch" />
       <h1 class="text-h4 font-weight-bold">Edit: {{ workshop.title }}</h1>
       <v-spacer />
-      <v-btn variant="outlined" :loading="savingDraft" @click="handleSave('draft')">Save as draft</v-btn>
-      <v-btn color="primary" :loading="savingPublish" @click="handleSave('published')">Publish workshop</v-btn>
+      <v-btn variant="outlined" :loading="savingDraft" @click="save('draft')">Save as draft</v-btn>
+      <v-btn color="primary" :loading="savingPublish" @click="save('published')">Publish workshop</v-btn>
     </div>
 
     <v-row>
       <v-col cols="12" md="8">
-        <v-row dense>
+        <v-form ref="formRef">
+        <v-row density="comfortable">
           <v-col cols="12">
             <v-card variant="outlined" rounded="lg">
               <v-card-item>
@@ -21,22 +22,42 @@
                   <v-icon color="primary" class="me-2">mdi-clipboard-text</v-icon>
                   <div>
                     <v-card-title class="text-body-1 font-weight-bold">Workshop details</v-card-title>
-                    <v-card-subtitle>Name, description, and dates</v-card-subtitle>
+                    <v-card-subtitle>Name and description</v-card-subtitle>
                   </div>
                 </template>
               </v-card-item>
               <v-divider />
               <v-card-text class="d-flex flex-column ga-4">
-                <v-text-field v-model="form.title" label="Workshop title *" :rules="required" variant="outlined" density="comfortable" hide-details="auto" @update:model-value="updateSummary" />
-                <v-textarea v-model="form.description" label="Description" variant="outlined" density="comfortable" rows="3" hide-details />
-                <v-row>
-                  <v-col cols="6">
-                    <v-text-field v-model="form.date_start" label="Start date *" type="date" :rules="required" variant="outlined" density="comfortable" hide-details="auto" @update:model-value="updateSummary" />
-                  </v-col>
-                  <v-col cols="6">
-                    <v-text-field v-model="form.date_end" label="End date *" type="date" :rules="required" variant="outlined" density="comfortable" hide-details="auto" @update:model-value="updateSummary" />
-                  </v-col>
-                </v-row>
+                <v-text-field v-model="form.title" name="title" label="Workshop title *" :rules="required" variant="outlined" density="comfortable" hide-details="auto" />
+                <v-textarea v-model="form.description" name="description" label="Description" variant="outlined" density="comfortable" rows="3" hide-details />
+              </v-card-text>
+            </v-card>
+          </v-col>
+
+          <v-col cols="12">
+            <v-card variant="outlined" rounded="lg">
+              <v-card-item>
+                <template #prepend>
+                  <v-icon color="teal" class="me-2">mdi-calendar-range</v-icon>
+                  <div>
+                    <v-card-title class="text-body-1 font-weight-bold">Schedules</v-card-title>
+                    <v-card-subtitle>One or more date ranges for this workshop</v-card-subtitle>
+                  </div>
+                </template>
+              </v-card-item>
+              <v-divider />
+              <v-card-text class="d-flex flex-column ga-2">
+                <div v-for="(r, i) in form.dateRanges" :key="i" class="d-flex align-center ga-2">
+                  <v-date-input v-model="r.start" :name="'date_start_' + i" label="Start date *" :min="today" :rules="required" variant="outlined" density="comfortable" hide-details="auto" />
+                  <v-icon class="flex-shrink-0">mdi-chevron-right</v-icon>
+                  <v-date-input v-model="r.end" :name="'date_end_' + i" label="End date *" :min="r.start || today" :rules="[...required, v => !r.start || !v || v >= r.start || 'End must be after start']" variant="outlined" density="comfortable" hide-details="auto" />
+                  <v-btn v-if="form.dateRanges.length > 1" icon variant="text" size="small" color="error" @click="removeRange(i)">
+                    <v-icon>mdi-close</v-icon>
+                  </v-btn>
+                </div>
+                <v-btn variant="outlined" size="small" color="primary" prepend-icon="mdi-plus" class="align-self-start" @click="addRange">
+                  Add date range
+                </v-btn>
               </v-card-text>
             </v-card>
           </v-col>
@@ -54,14 +75,14 @@
               </v-card-item>
               <v-divider />
               <v-card-text>
-                <v-radio-group v-model="form.conference_room_id" hide-details @update:model-value="updateSummary">
+                <v-radio-group v-model="form.conference_room_id" hide-details>
                   <v-row>
                     <v-col v-for="r in rooms ?? []" :key="r.id" cols="6">
                       <v-sheet
                         border
                         rounded="lg"
                         :class="['pa-3 room-option', { selected: form.conference_room_id === r.id }]"
-                        @click="form.conference_room_id = r.id; updateSummary()"
+                        @click="form.conference_room_id = r.id"
                       >
                         <v-radio :value="r.id" class="position-absolute opacity-0" style="pointer-events:none" />
                         <div class="d-flex justify-space-between align-start mb-1">
@@ -84,7 +105,7 @@
                     border
                     rounded="lg"
                     :class="['pa-3 mt-2 d-flex align-center room-option', { selected: !form.conference_room_id }]"
-                    @click="form.conference_room_id = null; updateSummary()"
+                    @click="form.conference_room_id = null"
                   >
                     <v-radio :value="null" class="position-absolute opacity-0" style="pointer-events:none" />
                     <v-icon class="me-2">mdi-calendar-blank</v-icon>
@@ -118,7 +139,7 @@
                     </v-avatar>
                     <div class="flex-grow-1">
                       <div class="text-body-2 font-weight-medium">{{ prog.name || 'New program' }}</div>
-                      <div class="text-caption text-medium-emphasis">{{ prog.trainer_name || 'No trainer assigned' }}</div>
+                      <div class="text-caption text-medium-emphasis">{{ prog.trainer_name || 'No organizer assigned' }}</div>
                     </div>
                     <v-btn icon variant="text" size="x-small" color="medium-emphasis" @click.stop="removeProgram(prog._key)">
                       <v-icon size="16">mdi-close</v-icon>
@@ -128,24 +149,24 @@
                     <div v-show="prog._open" class="border-t pa-3 d-flex flex-column ga-3">
                       <v-select
                         v-model="prog.name"
+                        name="program_name"
                         :items="PROGRAM_OPTIONS"
                         label="Program"
                         variant="outlined"
                         density="comfortable"
                         hide-details
-                        @update:model-value="updateSummary"
                       />
                       <v-select
                         v-model="prog.trainer_name"
-                        :items="TRAINER_OPTIONS"
-                        label="Trainer for this program"
-                        hint="Overrides lead trainer"
+                        name="program_trainer"
+                        :items="trainerOptions"
+                        label="Organizer for this program"
+                        hint="Overrides lead organizer"
                         persistent-hint
                         variant="outlined"
                         density="comfortable"
                         hide-details
                         clearable
-                        @update:model-value="updateSummary"
                       />
                       <v-row>
                         <v-col cols="6">
@@ -193,7 +214,7 @@
                 <template #prepend>
                   <v-icon color="success" class="me-2">mdi-account-tie</v-icon>
                   <div>
-                    <v-card-title class="text-body-1 font-weight-bold">Trainer & facilitator</v-card-title>
+                    <v-card-title class="text-body-1 font-weight-bold">Organizer & facilitator</v-card-title>
                     <v-card-subtitle>Assign the people running this workshop</v-card-subtitle>
                   </div>
                 </template>
@@ -204,19 +225,20 @@
                   <v-col cols="6">
                     <v-select
                       v-model="form.facilitator_id"
-                      :items="TRAINER_OPTIONS"
-                      label="Lead trainer *"
+                      name="organizer"
+                      :items="trainerOptions"
+                      label="Organizer *"
                       variant="outlined"
                       density="comfortable"
                       hide-details
                       :rules="required"
-                      @update:model-value="updateSummary"
                     />
                   </v-col>
                   <v-col cols="6">
                     <v-select
                       v-model="form.facilitator_assistant"
-                      :items="FACILITATOR_OPTIONS"
+                      name="facilitator"
+                      :items="facilitatorOptions"
                       label="Facilitator"
                       hint="Optional"
                       persistent-hint
@@ -224,11 +246,10 @@
                       density="comfortable"
                       hide-details
                       clearable
-                      @update:model-value="updateSummary"
                     />
                   </v-col>
                 </v-row>
-                <v-alert type="info" variant="tonal" density="compact" text="Trainers assigned to individual programs override this for their sessions." />
+                <v-alert type="info" variant="tonal" density="compact" text="Organizers assigned to individual programs override this selection for their sessions." />
               </v-card-text>
             </v-card>
           </v-col>
@@ -248,6 +269,7 @@
               <v-card-text class="d-flex flex-column ga-4">
                 <v-select
                   v-model="form.client_id"
+                  name="client_company"
                   :items="companyOptions"
                   label="Client company"
                   hint="Leave blank for open enrollment"
@@ -256,7 +278,6 @@
                   density="comfortable"
                   hide-details
                   clearable
-                  @update:model-value="updateSummary"
                 />
 
                 <div>
@@ -269,9 +290,10 @@
                 </div>
 
                 <v-row>
-                  <v-col cols="6">
+              <v-col cols="6">
                     <v-text-field
                       v-model.number="form.max_capacity"
+                      name="max_capacity"
                       label="Max capacity"
                       type="number"
                       variant="outlined"
@@ -279,7 +301,6 @@
                       hide-details
                       min="1"
                       max="200"
-                      @update:model-value="updateSummary"
                     >
                       <template #append-inner>
                         <v-btn icon variant="text" size="x-small" @click="stepCapacity(-1)">
@@ -291,21 +312,12 @@
                       </template>
                     </v-text-field>
                   </v-col>
-                  <v-col cols="6">
-                    <v-select
-                      v-model="form.payment"
-                      :items="PAYMENT_OPTIONS"
-                      label="Payment required"
-                      variant="outlined"
-                      density="comfortable"
-                      hide-details
-                    />
-                  </v-col>
                 </v-row>
               </v-card-text>
             </v-card>
           </v-col>
         </v-row>
+        </v-form>
       </v-col>
 
       <v-col cols="12" md="4">
@@ -363,7 +375,7 @@
                 </template>
               </v-list-item>
               <v-divider />
-              <v-list-item title="Trainer">
+              <v-list-item title="Organizer">
                 <template #subtitle>
                   <span :class="{ 'text-medium-emphasis': !summary.trainer }">{{ summary.trainer || 'Not assigned' }}</span>
                 </template>
@@ -401,8 +413,8 @@
           </v-card>
 
           <div class="d-flex flex-column ga-2">
-            <v-btn color="primary" size="large" :loading="savingPublish" block @click="handleSave('published')">Publish workshop</v-btn>
-            <v-btn variant="outlined" size="large" :loading="savingDraft" block @click="handleSave('draft')">Save as draft</v-btn>
+            <v-btn color="primary" size="large" :loading="savingPublish" block @click="save('published')">Publish workshop</v-btn>
+            <v-btn variant="outlined" size="large" :loading="savingDraft" block @click="save('draft')">Save as draft</v-btn>
           </div>
         </div>
       </v-col>
@@ -426,6 +438,7 @@ definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 const route = useRoute()
 const router = useRouter()
 const { workshops, rooms, companies, updateWorkshop } = useAdminWorkshops()
+const { users } = useUsers()
 
 const workshop = computed(() => workshops.value?.find(w => w.id === route.params.id))
 const loading = computed(() => !workshops.value)
@@ -433,15 +446,13 @@ const loading = computed(() => !workshops.value)
 const form = reactive({
   title: '',
   description: '',
-  date_start: '',
-  date_end: '',
+  dateRanges: [{ start: '', end: '' }],
   conference_room_id: null as string | null,
   client_id: null as string | null,
   facilitator_id: null as string | null,
   facilitator_assistant: null as string | null,
   enrollment_type: 'company',
   max_capacity: 20,
-  payment: 'Required — Paid enrollment',
 })
 const status = ref('draft')
 const savingDraft = ref(false)
@@ -449,6 +460,7 @@ const savingPublish = ref(false)
 const formRef = ref<VForm>()
 
 const required = [(v: any) => !!v || 'Required']
+const today = new Date().toISOString().split('T')[0]
 
 const companyOptions = computed(() =>
   (companies.value ?? []).map(c => ({ title: c.name, value: c.id }))
@@ -464,11 +476,10 @@ const STATUS_OPTIONS = [
   { value: 'upcoming', label: 'Upcoming', sub: 'Confirmed, enrollment closed', dot: '#D97706' },
 ]
 const PROGRAM_OPTIONS = ['PM Fundamentals', 'Safety & Compliance', 'Leadership Essentials', 'HR Fundamentals', 'Digital Literacy', 'Risk Management', 'Custom (new program)']
-const TRAINER_OPTIONS = ['Maria Santos', 'Rico Cruz', 'Ana Reyes', 'Liza Ocampo']
-const FACILITATOR_OPTIONS = ['Rico Dela Cruz', 'Jen Valdez', 'Mark Tan']
+const trainerOptions = computed(() => (users.value ?? []).filter(u => u.role === 'trainer' || u.role === 'facilitator').map(u => u.name))
+const facilitatorOptions = computed(() => (users.value ?? []).filter(u => u.role === 'facilitator' || u.role === 'trainer').map(u => u.name))
 const SCHEDULE_OPTIONS = ['Morning (08:00–12:00)', 'Afternoon (13:00–17:00)', 'Full day (08:00–17:00)', 'Custom']
 const DAY_OPTIONS = ['Day 1', 'Day 2', 'Day 3']
-const PAYMENT_OPTIONS = ['Required — Paid enrollment', 'Waived — No payment needed', 'Per arrangement']
 
 let progKey = 0
 interface ProgramItem {
@@ -484,29 +495,39 @@ const programs = ref<ProgramItem[]>([])
 function addProgram() {
   progKey++
   programs.value.push({ _key: progKey, _open: true, name: '', trainer_name: null, schedule: 'Morning (08:00–12:00)', start_day: 'Day 1' })
-  updateSummary()
 }
 
 function removeProgram(key: number) {
   programs.value = programs.value.filter(p => p._key !== key)
-  updateSummary()
 }
 
 function stepCapacity(delta: number) {
   form.max_capacity = Math.max(1, Math.min(200, (form.max_capacity || 0) + delta))
-  updateSummary()
+}
+
+function addRange() {
+  form.dateRanges.push({ start: '', end: '' })
+}
+
+function removeRange(i: number) {
+  form.dateRanges.splice(i, 1)
 }
 
 const summary = computed(() => {
   const title = form.title
-  const dates = form.date_start && form.date_end ? `${fmt(form.date_start)} – ${fmt(form.date_end)}` : null
+
+  const filled = form.dateRanges.filter(r => r.start && r.end)
+  const dates = filled.length > 0 ? filled.map(r => `${fmt(r.start)} – ${fmt(r.end)}`).join(', ') : null
 
   let duration = '—'
-  if (form.date_start && form.date_end) {
-    const s = new Date(form.date_start)
-    const e = new Date(form.date_end)
-    const days = Math.round((e.getTime() - s.getTime()) / 86400000) + 1
-    if (days > 0) duration = `${days} day${days > 1 ? 's' : ''}`
+  if (filled.length > 0) {
+    const totalDays = filled.reduce((sum, r) => {
+      const s = new Date(r.start)
+      const e = new Date(r.end)
+      if (e < s) return sum
+      return sum + Math.round((e.getTime() - s.getTime()) / 86400000) + 1
+    }, 0)
+    if (totalDays > 0) duration = `${totalDays} day${totalDays > 1 ? 's' : ''}`
   }
 
   const room = selectedRoom.value ? `${selectedRoom.value.name} · ${selectedRoom.value.venue_name}` : null
@@ -523,37 +544,34 @@ const summary = computed(() => {
   return { title, dates, duration, room, trainer, facilitator, client, capacity: cap, programs: progSummary }
 })
 
-function updateSummary() {}
-
 function fmt(d: string) {
   if (!d) return ''
   const dt = new Date(d + 'T00:00:00')
   return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-function validate() {
-  return form.title && form.date_start && form.date_end && form.facilitator_id
+function save(publishStatus: string) {
+  status.value = publishStatus
+  handleSave()
 }
 
-async function handleSave(publishStatus: string) {
-  if (!validate()) {
-    snackbar.value = { show: true, text: 'Please fill in required fields (title, dates, trainer)', color: 'error' }
-    return
-  }
+async function handleSave() {
+  const { valid } = await formRef.value!.validate()
+  if (!valid) return
 
-  const loading = publishStatus === 'published' ? savingPublish : savingDraft
+  const loading = status.value === 'published' ? savingPublish : savingDraft
   loading.value = true
   try {
     await updateWorkshop(route.params.id as string, {
       title: form.title,
       description: form.description || null,
-      date_start: form.date_start,
-      date_end: form.date_end,
+      date_start: form.dateRanges.filter(r => r.start).map(r => r.start).sort()[0],
+      date_end: form.dateRanges.filter(r => r.end).map(r => r.end).sort().slice(-1)[0],
       conference_room_id: form.conference_room_id,
       client_id: form.client_id,
-      status: publishStatus as any,
+      status: status.value as any,
     })
-    snackbar.value = { show: true, text: publishStatus === 'published' ? 'Workshop published!' : 'Workshop saved as draft.', color: 'success' }
+    snackbar.value = { show: true, text: status.value === 'published' ? 'Workshop published!' : 'Workshop saved as draft.', color: 'success' }
     setTimeout(() => router.push('/manage/workshops'), 1200)
   } catch (err: any) {
     snackbar.value = { show: true, text: err.message, color: 'error' }
@@ -566,10 +584,10 @@ watch(workshop, (w) => {
   if (w) {
     form.title = w.title
     form.description = w.description ?? ''
-    form.date_start = w.date_start
-    form.date_end = w.date_end
+    form.dateRanges = w.date_start ? [{ start: w.date_start, end: w.date_end || w.date_start }] : [{ start: '', end: '' }]
     form.conference_room_id = w.conference_room_id
     form.client_id = w.client_id
+    form.facilitator_id = w.facilitator_id
     status.value = w.status
   }
 }, { immediate: true })

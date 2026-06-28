@@ -1,38 +1,74 @@
 <template>
   <div v-if="room">
-    <div class="d-flex align-center mb-4">
-      <v-btn icon variant="text" :to="'/manage/rooms'" class="me-2">
+    <div class="d-flex align-center mb-4 ga-3 flex-wrap">
+      <v-btn icon variant="text" :to="'/manage/rooms'" class="me-1">
         <v-icon>mdi-arrow-left</v-icon>
       </v-btn>
+      <v-divider vertical class="align-self-stretch" />
       <h1 class="text-h4 font-weight-bold">Edit: {{ room.name }}</h1>
+      <v-spacer />
+      <v-btn variant="outlined" :to="'/manage/rooms'">Cancel</v-btn>
+      <v-btn color="primary" :loading="saving" @click="handleSave">Save changes</v-btn>
     </div>
 
-    <v-card elevation="2" rounded="lg" max-width="640">
-      <v-card-text>
-        <v-form ref="formRef" @submit.prevent="handleSave">
-          <v-text-field v-model="form.name" label="Room name *" :rules="required" variant="outlined" density="comfortable" class="mb-2" />
-          <v-text-field v-model="form.venue_name" label="Venue name *" :rules="required" variant="outlined" density="comfortable" class="mb-2" />
-          <v-text-field v-model="form.venue_address" label="Venue address" variant="outlined" density="comfortable" class="mb-2" />
-          <v-row>
-            <v-col cols="6">
-              <v-text-field v-model.number="form.capacity" label="Capacity *" type="number" :rules="required" variant="outlined" density="comfortable" class="mb-2" />
-            </v-col>
-            <v-col cols="6">
-              <v-text-field v-model="form.floor" label="Floor" variant="outlined" density="comfortable" class="mb-2" />
-            </v-col>
-          </v-row>
-          <v-select v-model="form.status" :items="statusOptions" label="Status" variant="outlined" density="comfortable" class="mb-2" />
-          <v-textarea v-model="form.notes" label="Notes" variant="outlined" density="comfortable" class="mb-4" rows="3" />
+    <v-row>
+      <v-col cols="12" md="8" lg="6">
+        <v-card variant="outlined" rounded="lg">
+          <v-card-item>
+            <template #prepend>
+              <v-icon color="warning" class="me-2">mdi-door-open</v-icon>
+              <div>
+                <v-card-title class="text-body-1 font-weight-bold">Room details</v-card-title>
+                <v-card-subtitle>Name, venue, and capacity information</v-card-subtitle>
+              </div>
+            </template>
+          </v-card-item>
+          <v-divider />
+          <v-card-text class="d-flex flex-column ga-4">
+            <v-text-field v-model="form.name" label="Room name *" :rules="required" variant="outlined" density="comfortable" hide-details="auto" />
+            <v-text-field v-model="form.venue_name" label="Venue name *" :rules="required" variant="outlined" density="comfortable" hide-details="auto" />
+            <v-text-field v-model="form.venue_address" label="Venue address" variant="outlined" density="comfortable" hide-details />
 
-          <v-alert v-if="error" type="error" density="compact" class="mb-4">{{ error }}</v-alert>
+            <v-row>
+              <v-col cols="6">
+                <v-text-field v-model.number="form.capacity" label="Capacity *" type="number" :rules="required" variant="outlined" density="comfortable" hide-details="auto" />
+              </v-col>
+              <v-col cols="6">
+                <v-text-field v-model="form.floor" label="Floor" variant="outlined" density="comfortable" hide-details />
+              </v-col>
+            </v-row>
 
-          <div class="d-flex ga-2">
-            <v-btn :to="'/manage/rooms'" variant="outlined">Cancel</v-btn>
-            <v-btn type="submit" color="primary" :loading="saving">Save Changes</v-btn>
-          </div>
-        </v-form>
-      </v-card-text>
-    </v-card>
+            <v-textarea v-model="form.notes" label="Notes" variant="outlined" density="comfortable" rows="3" hide-details />
+
+            <v-alert v-if="error" type="error" density="compact" variant="tonal">{{ error }}</v-alert>
+          </v-card-text>
+        </v-card>
+
+        <v-card variant="outlined" rounded="lg" class="mt-4">
+          <v-card-item>
+            <template #prepend>
+              <v-icon color="success" class="me-2">mdi-information</v-icon>
+              <div>
+                <v-card-title class="text-body-1 font-weight-bold">Status</v-card-title>
+                <v-card-subtitle>Room availability</v-card-subtitle>
+              </div>
+            </template>
+          </v-card-item>
+          <v-divider />
+          <v-card-text>
+            <v-radio-group v-model="form.status" inline hide-details>
+              <v-radio label="Available" value="available" color="success" />
+              <v-radio label="Booked" value="booked" color="warning" />
+              <v-radio label="In use" value="in_use" color="error" />
+            </v-radio-group>
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
+
+    <v-snackbar v-model="snackbar.show" :color="snackbar.color" timeout="3000">
+      {{ snackbar.text }}
+    </v-snackbar>
   </div>
   <div v-else-if="loading" class="text-center py-10">
     <v-progress-circular indeterminate color="primary" />
@@ -61,12 +97,11 @@ const form = reactive({
   status: 'available',
   notes: '',
 })
-const error = ref('')
 const saving = ref(false)
+const error = ref('')
 const formRef = ref<VForm>()
 
 const required = [(v: string | number) => !!v || 'Required']
-const statusOptions = ['available', 'booked', 'in_use']
 
 watch(room, (r) => {
   if (r) {
@@ -96,11 +131,14 @@ async function handleSave() {
       status: form.status as any,
       notes: form.notes || null,
     })
-    await router.push('/manage/rooms')
+    snackbar.value = { show: true, text: 'Room updated successfully', color: 'success' }
+    setTimeout(() => router.push('/manage/rooms'), 1000)
   } catch (err: any) {
     error.value = err.message
   } finally {
     saving.value = false
   }
 }
+
+const snackbar = ref({ show: false, text: '', color: 'success' })
 </script>

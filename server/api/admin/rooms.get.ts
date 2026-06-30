@@ -3,7 +3,7 @@ import type { ConferenceRoom } from '~/types'
 export default defineEventHandler(async (): Promise<ConferenceRoom[]> => {
   const supabase = useAdminClient()
   const { data, error } = await supabase
-    .from('conference_rooms')
+    .from('venues')
     .select('*')
     .order('name')
 

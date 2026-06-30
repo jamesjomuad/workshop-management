@@ -55,7 +55,7 @@ const pageTitle = computed(() => {
     '/manage': 'Dashboard',
     '/manage/users': 'Users',
     '/manage/settings': 'Settings',
-    '/manage/rooms': 'Conference Rooms',
+    '/manage/venues': 'Venues',
     '/manage/workshops': 'Workshops',
     '/manage/programs': 'Programs & Sessions',
     '/manage/enrollments': 'Enrollments & Attendance',

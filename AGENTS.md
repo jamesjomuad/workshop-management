@@ -47,17 +47,18 @@ Admin endpoints use `useAdminClient()` (`server/utils/supabase.ts`) which uses `
 ### Composables
 
 Public: `useAuth`, `useVenues`, `useWorkshops`
-Admin: `useAdminWorkshops`, `useConferenceRooms`, `useUsers`, `useStats`, `useAdmin` (role checks)
+Admin: `useAdminWorkshops`, `useConferenceRooms`, `useUsers`, `useStats`, `useAdmin` (role checks), `useCompanies`, `useContacts`
 
 Admin facades call `/api/admin/*` server endpoints. `useAdmin()` queries the `user_roles` table directly via anon client (client-side).
 
-### DB schema (9 tables)
+### DB schema (10 tables)
 
-Migration: `supabase/migrations/20260627000001_training_system_core.sql`
+Migration: `supabase/migrations/20260627000001_training_system_core.sql`, `20260628000001_contacts.sql`, etc.
 
 ```
-companies → user_roles (FK to auth.users) → conference_rooms / workshops / programs
-  workshops → conference_rooms (nullable), facilitator_id, client_id
+companies → user_roles (FK to auth.users) → venues / workshops / programs
+  contacts (FK to companies)
+  workshops → venues (nullable), facilitator_id, client_id
   workshop_programs (junction: workshop_id + program_id, unique) → sessions (per day)
   enrollments (workshop_id + trainee_id, unique) → attendance (per session, per enrollment)
 ```
@@ -88,14 +89,40 @@ Manual interfaces in `types/index.ts` (18 types). Not auto-generated — `supaba
 - The `useWorkshops.ts` composable references a `Category` type that is **not defined** in `types/index.ts` — it's inferred from the mock API response
 - `cookie` vite alias in `nuxt.config.ts`: `'cookie': 'cookie/dist/index.js'`
 - `postinstall` hook runs `nuxt prepare` (generates `.nuxt/`)
+- Table was renamed `conference_rooms` → `venues` via migration `20260628000002`
+- The `Contact` type in `types/index.ts` has `company_name` as optional but the server API maps it from a join — `companies` is not in the base `ConferenceRoom` type despite being used in queries
+- `manage/index.vue`, `manage/programs.vue`, `manage/enrollments.vue` use entirely hardcoded local data arrays — no API calls
 
 ### Build phases (from project plan)
 
 | Phase | Status | Key deliverables |
 |-------|--------|----------------|
-| 1 — Foundation | ✅ Done | Auth, DB, rooms CRUD, workshops CRUD, dashboard overview |
+| 1 — Foundation | ✅ Done | Auth, DB, rooms CRUD, workshops CRUD, dashboard overview, contacts/companies CRUD |
 | 2 — Curriculum | ❌ Planned | Programs CRUD, WorkshopProgram linking, sessions CRUD, room display page |
 | 3 — Enrollment & Attendance | ❌ Planned | Batch enrollment, payment tracking, attendance marking, realtime |
 | 4 — Reporting | ❌ Planned | Certificates, client portal, reports |
 
 HTML/CSS mockups for future features in `docs/ui/`.
+
+### Coding standards
+
+- Use `definePageMeta` on every page with explicit `layout` and `middleware`
+- API handlers return typed responses with `defineEventHandler`
+- Admin API endpoints use `useAdminClient()` from `server/utils/supabase.ts`
+- Composables return reactive state and action functions
+- Use `useFetch` for API calls with typed generics
+- Use `reactive()` for form state, `ref()` for primitive values
+- No CSS framework other than Vuetify 4 — use Vuetify components and utility classes
+- Type imports via `~/types` alias
+- All UI text in English (no i18n setup)
+
+
+### Knowledge Base
+
+The following documents define the full system context:
+
+- Architecture → ./docs/ARCHITECTURE.md
+- API Specification → ./docs/API_SPEC.md
+- Code Guidelines → ./docs/CODE_GUIDELINES.md
+- Codebase Summary → ./docs/CODEBASE_SUMMARY.md
+- AI Context → ./docs/AI_CONTEXT.md

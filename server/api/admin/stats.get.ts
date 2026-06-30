@@ -2,7 +2,7 @@ export default defineEventHandler(async () => {
   const supabase = useAdminClient()
 
   const [roomsRes, workshopsRes, programsRes, enrollmentsRes] = await Promise.all([
-    supabase.from('conference_rooms').select('*', { count: 'exact', head: true }),
+    supabase.from('venues').select('*', { count: 'exact', head: true }),
     supabase.from('workshops').select('*', { count: 'exact', head: true }),
     supabase.from('programs').select('*', { count: 'exact', head: true }),
     supabase.from('enrollments').select('*', { count: 'exact', head: true }),

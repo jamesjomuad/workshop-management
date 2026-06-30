@@ -3,7 +3,7 @@ export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id')
 
   const { error } = await supabase
-    .from('conference_rooms')
+    .from('venues')
     .delete()
     .eq('id', id)
 

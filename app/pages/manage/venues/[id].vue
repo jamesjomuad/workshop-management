@@ -1,13 +1,13 @@
 <template>
-  <div v-if="room">
+  <div v-if="venue">
     <div class="d-flex align-center mb-4 ga-3 flex-wrap">
-      <v-btn icon variant="text" :to="'/manage/rooms'" class="me-1">
+      <v-btn icon variant="text" :to="'/manage/venues'" class="me-1">
         <v-icon>mdi-arrow-left</v-icon>
       </v-btn>
       <v-divider vertical class="align-self-stretch" />
-      <h1 class="text-h4 font-weight-bold">Edit: {{ room.name }}</h1>
+      <h1 class="text-h4 font-weight-bold">Edit: {{ venue.name }}</h1>
       <v-spacer />
-      <v-btn variant="outlined" :to="'/manage/rooms'">Cancel</v-btn>
+      <v-btn variant="outlined" :to="'/manage/venues'">Cancel</v-btn>
       <v-btn color="primary" :loading="saving" @click="handleSave">Save changes</v-btn>
     </div>
 
@@ -18,29 +18,31 @@
             <template #prepend>
               <v-icon color="warning" class="me-2">mdi-door-open</v-icon>
               <div>
-                <v-card-title class="text-body-1 font-weight-bold">Room details</v-card-title>
+                <v-card-title class="text-body-1 font-weight-bold">Venue details</v-card-title>
                 <v-card-subtitle>Name, venue, and capacity information</v-card-subtitle>
               </div>
             </template>
           </v-card-item>
           <v-divider />
-          <v-card-text class="d-flex flex-column ga-4">
-            <v-text-field v-model="form.name" label="Room name *" :rules="required" variant="outlined" density="comfortable" hide-details="auto" />
-            <v-text-field v-model="form.venue_name" label="Venue name *" :rules="required" variant="outlined" density="comfortable" hide-details="auto" />
-            <v-text-field v-model="form.venue_address" label="Venue address" variant="outlined" density="comfortable" hide-details />
+          <v-card-text>
+            <v-form ref="formRef" @submit.prevent="handleSave" class="d-flex flex-column ga-4">
+            <v-text-field v-model="form.name" label="Hotel name *" name="name" :rules="required" variant="outlined" density="comfortable" hide-details="auto" />
+            <v-text-field v-model="form.venue_name" label="Venue *" name="venue_name" :rules="required" variant="outlined" density="comfortable" hide-details="auto" />
+            <v-text-field v-model="form.venue_address" label="Address" name="venue_address" variant="outlined" density="comfortable" hide-details />
 
             <v-row>
               <v-col cols="6">
-                <v-text-field v-model.number="form.capacity" label="Capacity *" type="number" :rules="required" variant="outlined" density="comfortable" hide-details="auto" />
+                <v-text-field v-model.number="form.capacity" label="Capacity *" name="capacity" type="number" :rules="required" variant="outlined" density="comfortable" hide-details="auto" />
               </v-col>
               <v-col cols="6">
-                <v-text-field v-model="form.floor" label="Floor" variant="outlined" density="comfortable" hide-details />
+                <v-text-field v-model="form.floor" label="Floor" name="floor" variant="outlined" density="comfortable" hide-details />
               </v-col>
             </v-row>
 
-            <v-textarea v-model="form.notes" label="Notes" variant="outlined" density="comfortable" rows="3" hide-details />
+            <v-textarea v-model="form.notes" label="Notes" name="notes" variant="outlined" density="comfortable" rows="3" hide-details />
 
             <v-alert v-if="error" type="error" density="compact" variant="tonal">{{ error }}</v-alert>
+            </v-form>
           </v-card-text>
         </v-card>
 
@@ -50,7 +52,7 @@
               <v-icon color="success" class="me-2">mdi-information</v-icon>
               <div>
                 <v-card-title class="text-body-1 font-weight-bold">Status</v-card-title>
-                <v-card-subtitle>Room availability</v-card-subtitle>
+                <v-card-subtitle>Availability</v-card-subtitle>
               </div>
             </template>
           </v-card-item>
@@ -74,19 +76,21 @@
     <v-progress-circular indeterminate color="primary" />
   </div>
   <div v-else class="text-center py-10">
-    <p class="text-grey">Room not found.</p>
+    <p class="text-grey">Venue not found.</p>
   </div>
 </template>
 
 <script setup lang="ts">
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
+import type { ConferenceRoom } from '~/types'
+
 const route = useRoute()
 const router = useRouter()
-const { rooms, updateRoom } = useConferenceRooms()
+const { data: venues, refresh } = useFetch<ConferenceRoom[]>('/api/admin/rooms')
 
-const room = computed(() => rooms.value?.find(r => r.id === route.params.id))
-const loading = computed(() => !rooms.value)
+const venue = computed(() => venues.value?.find(r => r.id === route.params.id))
+const loading = computed(() => !venues.value)
 
 const form = reactive({
   name: '',
@@ -103,7 +107,7 @@ const formRef = ref<VForm>()
 
 const required = [(v: string | number) => !!v || 'Required']
 
-watch(room, (r) => {
+watch(venue, (r) => {
   if (r) {
     form.name = r.name
     form.venue_name = r.venue_name
@@ -122,17 +126,22 @@ async function handleSave() {
   saving.value = true
   error.value = ''
   try {
-    await updateRoom(route.params.id as string, {
-      name: form.name,
-      venue_name: form.venue_name,
-      venue_address: form.venue_address || null,
-      floor: form.floor || null,
-      capacity: form.capacity,
-      status: form.status as any,
-      notes: form.notes || null,
+    const { error: err } = await useFetch(`/api/admin/rooms/${route.params.id}`, {
+      method: 'PUT',
+      body: {
+        name: form.name,
+        venue_name: form.venue_name,
+        venue_address: form.venue_address || null,
+        floor: form.floor || null,
+        capacity: form.capacity,
+        status: form.status as any,
+        notes: form.notes || null,
+      },
     })
-    snackbar.value = { show: true, text: 'Room updated successfully', color: 'success' }
-    setTimeout(() => router.push('/manage/rooms'), 1000)
+    if (err.value) throw new Error(err.value.message)
+    await refresh()
+    snackbar.value = { show: true, text: 'Venue updated successfully', color: 'success' }
+    setTimeout(() => router.push('/manage/venues'), 1000)
   } catch (err: any) {
     error.value = err.message
   } finally {

@@ -5,7 +5,7 @@ export default defineEventHandler(async (event): Promise<ConferenceRoom> => {
   const body = await readBody(event)
 
   const { data, error } = await supabase
-    .from('conference_rooms')
+    .from('venues')
     .insert({
       name: body.name,
       venue_name: body.venue_name,

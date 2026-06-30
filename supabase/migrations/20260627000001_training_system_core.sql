@@ -22,9 +22,9 @@ CREATE TABLE user_roles (
 );
 
 -- ============================================
--- Conference Rooms
+-- Venues
 -- ============================================
-CREATE TABLE conference_rooms (
+CREATE TABLE venues (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
   venue_name TEXT NOT NULL,
@@ -46,7 +46,7 @@ CREATE TABLE workshops (
   description TEXT,
   date_start DATE NOT NULL,
   date_end DATE NOT NULL,
-  conference_room_id UUID REFERENCES conference_rooms(id),
+  conference_room_id UUID REFERENCES venues(id),
   facilitator_id UUID REFERENCES user_roles(id),
   client_id UUID REFERENCES companies(id),
   status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'published', 'ongoing', 'completed', 'cancelled')),
@@ -124,7 +124,7 @@ CREATE TABLE attendance (
 -- ============================================
 ALTER TABLE companies ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_roles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE conference_rooms ENABLE ROW LEVEL SECURITY;
+ALTER TABLE venues ENABLE ROW LEVEL SECURITY;
 ALTER TABLE workshops ENABLE ROW LEVEL SECURITY;
 ALTER TABLE programs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE workshop_programs ENABLE ROW LEVEL SECURITY;
@@ -197,22 +197,22 @@ CREATE POLICY "Only admin can delete roles"
 -- RLS Policies: Conference Rooms
 -- ============================================
 CREATE POLICY "All authenticated users can view rooms"
-  ON conference_rooms FOR SELECT
+  ON venues FOR SELECT
   TO authenticated
   USING (true);
 
-CREATE POLICY "Admin and staff can insert rooms"
-  ON conference_rooms FOR INSERT
+CREATE POLICY "Admin and staff can insert venues"
+  ON venues FOR INSERT
   TO authenticated
   WITH CHECK (get_user_role() IN ('admin', 'staff'));
 
-CREATE POLICY "Admin and staff can update rooms"
-  ON conference_rooms FOR UPDATE
+CREATE POLICY "Admin and staff can update venues"
+  ON venues FOR UPDATE
   TO authenticated
   USING (get_user_role() IN ('admin', 'staff'));
 
-CREATE POLICY "Only admin can delete rooms"
-  ON conference_rooms FOR DELETE
+CREATE POLICY "Only admin can delete venues"
+  ON venues FOR DELETE
   TO authenticated
   USING (get_user_role() = 'admin');
 

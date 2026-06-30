@@ -3,7 +3,6 @@ import type { Venue, EventType, Testimonial } from '~/types'
 export function useVenues() {
   const searchQuery = ref('')
   const selectedEventType = ref('')
-  const dateRange = ref<[string, string] | null>(null)
 
   const {
     data: result,

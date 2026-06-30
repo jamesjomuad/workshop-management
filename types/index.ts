@@ -107,7 +107,7 @@ export interface Workshop {
 }
 
 export interface WorkshopWithRelations extends Workshop {
-  conference_room?: ConferenceRoom
+  venue?: ConferenceRoom
   client?: Company
 }
 

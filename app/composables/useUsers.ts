@@ -6,5 +6,10 @@ export function useUsers() {
   const activeUsers = computed(() => users.value?.filter(u => u.status === 'active') ?? [])
   const inactiveUsers = computed(() => users.value?.filter(u => u.status === 'inactive') ?? [])
 
-  return { users, pending, error, refresh, activeUsers, inactiveUsers }
+  async function inviteUser(email: string) {
+    await $fetch('/api/invite', { method: 'POST', body: { email } })
+    await refresh()
+  }
+
+  return { users, pending, error, refresh, activeUsers, inactiveUsers, inviteUser }
 }

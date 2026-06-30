@@ -68,50 +68,48 @@
                 <template #prepend>
                   <v-icon color="warning" class="me-2">mdi-door-open</v-icon>
                   <div>
-                    <v-card-title class="text-body-1 font-weight-bold">Conference room</v-card-title>
+                    <v-card-title class="text-body-1 font-weight-bold">Venue</v-card-title>
                     <v-card-subtitle>Optional — assign later if venue is unconfirmed</v-card-subtitle>
                   </div>
                 </template>
               </v-card-item>
               <v-divider />
               <v-card-text>
-                <v-radio-group v-model="form.conference_room_id" hide-details>
-                  <v-row>
-                    <v-col v-for="r in rooms ?? []" :key="r.id" cols="6">
-                      <v-sheet
-                        border
-                        rounded="lg"
-                        :class="['pa-3 room-option', { selected: form.conference_room_id === r.id }]"
-                        @click="form.conference_room_id = r.id"
-                      >
-                        <v-radio :value="r.id" class="position-absolute opacity-0" style="pointer-events:none" />
-                        <div class="d-flex justify-space-between align-start mb-1">
-                          <div class="text-caption text-medium-emphasis font-family-mono">
-                            <v-icon size="14" class="me-1">mdi-hotel</v-icon>
-                            {{ r.venue_name }}
-                          </div>
-                          <v-chip size="x-small" color="success" variant="tonal">Available</v-chip>
-                        </div>
-                        <div class="text-body-2 font-weight-bold">{{ r.name }}</div>
-                        <div class="text-caption text-medium-emphasis">
-                          <v-icon size="14" class="me-1">mdi-account-group</v-icon>
-                          {{ r.capacity }} pax
-                          <span v-if="r.floor"> · {{ r.floor }}</span>
-                        </div>
-                      </v-sheet>
-                    </v-col>
-                  </v-row>
-                  <v-sheet
-                    border
-                    rounded="lg"
-                    :class="['pa-3 mt-2 d-flex align-center room-option', { selected: !form.conference_room_id }]"
-                    @click="form.conference_room_id = null"
-                  >
-                    <v-radio :value="null" class="position-absolute opacity-0" style="pointer-events:none" />
-                    <v-icon class="me-2">mdi-calendar-blank</v-icon>
-                    <span class="text-body-2 text-medium-emphasis">Decide later — no room assigned yet</span>
-                  </v-sheet>
-                </v-radio-group>
+                <v-autocomplete
+                  v-model="form.conference_room_id"
+                  :items="venues ?? []"
+                  item-title="name"
+                  item-value="id"
+                  label="Search or select venue"
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details
+                  clearable
+                  placeholder="Type to search..."
+                  :menu-props="{ maxHeight: '400px' }"
+                >
+                  <template #item="{ props, item }">
+                    <v-list-item
+                      v-bind="props"
+                      :title="item.name"
+                      :subtitle="item.venue_name + (item.capacity ? ' · ' + item.capacity + ' pax' : '')"
+                    >
+                      <template #prepend>
+                        <v-icon size="18" color="warning" class="me-2">mdi-door-open</v-icon>
+                      </template>
+                    </v-list-item>
+                  </template>
+                  <template #selection="{ item }">
+                    <div class="d-flex align-center ga-2">
+                      <v-icon size="18" color="warning">mdi-door-open</v-icon>
+                      <span class="font-weight-medium">{{ item.name }}</span>
+                      <span class="text-caption text-medium-emphasis ms-1">— {{ item.venue_name }}</span>
+                    </div>
+                  </template>
+                  <template #no-data>
+                    <v-list-item title="No venues found" />
+                  </template>
+                </v-autocomplete>
               </v-card-text>
             </v-card>
           </v-col>
@@ -139,7 +137,7 @@
                     </v-avatar>
                     <div class="flex-grow-1">
                       <div class="text-body-2 font-weight-medium">{{ prog.name || 'New program' }}</div>
-                      <div class="text-caption text-medium-emphasis">{{ prog.trainer_name || 'No trainer assigned' }}</div>
+                      <div class="text-caption text-medium-emphasis">{{ users?.find(u => u.id === prog.trainer_id)?.name || 'No trainer assigned' }}</div>
                     </div>
                     <v-btn icon variant="text" size="x-small" color="medium-emphasis" @click.stop="removeProgram(prog._key)">
                       <v-icon size="16">mdi-close</v-icon>
@@ -156,10 +154,12 @@
                         density="comfortable"
                         hide-details
                       />
-                      <v-select
-                        v-model="prog.trainer_name"
+                      <v-autocomplete
+                        v-model="prog.trainer_id"
                         name="program_trainer"
-                        :items="trainerOptions"
+                        :items="userOptions"
+                        item-title="title"
+                        item-value="value"
                         label="Trainer for this program"
                         hint="Overrides lead trainer"
                         persistent-hint
@@ -167,7 +167,31 @@
                         density="comfortable"
                         hide-details
                         clearable
-                      />
+                        placeholder="Type to search..."
+                        :menu-props="{ maxHeight: '400px' }"
+                      >
+                        <template #item="{ props, item }">
+                          <v-list-item
+                            v-bind="props"
+                            :title="item.title"
+                            :subtitle="item.role"
+                          >
+                            <template #prepend>
+                              <v-icon size="18" color="purple" class="me-2">mdi-account-school</v-icon>
+                            </template>
+                          </v-list-item>
+                        </template>
+                        <template #selection="{ item }">
+                          <div class="d-flex align-center ga-2">
+                            <v-icon size="18" color="purple">mdi-account-school</v-icon>
+                            <span class="font-weight-medium">{{ item.title }}</span>
+                            <span class="text-caption text-medium-emphasis ms-1">— {{ item.role }}</span>
+                          </div>
+                        </template>
+                        <template #no-data>
+                          <v-list-item title="No users found" />
+                        </template>
+                      </v-autocomplete>
                       <v-row>
                         <v-col cols="6">
                           <v-select
@@ -225,22 +249,51 @@
               <v-card-text class="d-flex flex-column ga-4">
                 <v-row>
                   <v-col cols="6">
-                    <v-select
+                    <v-autocomplete
                       v-model="form.facilitator_id"
                       name="organizer"
-                      :items="trainerOptions"
+                      :items="userOptions"
+                      item-title="title"
+                      item-value="value"
                       label="Organizer *"
                       variant="outlined"
                       density="comfortable"
                       hide-details
                       :rules="required"
-                    />
+                      clearable
+                      placeholder="Type to search..."
+                      :menu-props="{ maxHeight: '400px' }"
+                    >
+                      <template #item="{ props, item }">
+                        <v-list-item
+                          v-bind="props"
+                          :title="item.title"
+                          :subtitle="item.role"
+                        >
+                          <template #prepend>
+                            <v-icon size="18" color="success" class="me-2">mdi-account-tie</v-icon>
+                          </template>
+                        </v-list-item>
+                      </template>
+                      <template #selection="{ item }">
+                        <div class="d-flex align-center ga-2">
+                          <v-icon size="18" color="success">mdi-account-tie</v-icon>
+                          <span class="font-weight-medium">{{ item.title }}</span>
+                          <span class="text-caption text-medium-emphasis ms-1">— {{ item.role }}</span>
+                        </div>
+                      </template>
+                      <template #no-data>
+                        <v-list-item title="No users found" />
+                      </template>
+                    </v-autocomplete>
                   </v-col>
                   <v-col cols="6">
-                    <v-select
+                    <v-autocomplete
                       v-model="form.facilitator_assistant"
                       name="facilitator"
-                      :items="facilitatorOptions"
+                      :items="userOptions"
+                      item-title="title"
+                      item-value="value"
                       label="Facilitator"
                       hint="Optional"
                       persistent-hint
@@ -248,7 +301,31 @@
                       density="comfortable"
                       hide-details
                       clearable
-                    />
+                      placeholder="Type to search..."
+                      :menu-props="{ maxHeight: '400px' }"
+                    >
+                      <template #item="{ props, item }">
+                        <v-list-item
+                          v-bind="props"
+                          :title="item.title"
+                          :subtitle="item.role"
+                        >
+                          <template #prepend>
+                            <v-icon size="18" color="teal" class="me-2">mdi-account</v-icon>
+                          </template>
+                        </v-list-item>
+                      </template>
+                      <template #selection="{ item }">
+                        <div class="d-flex align-center ga-2">
+                          <v-icon size="18" color="teal">mdi-account</v-icon>
+                          <span class="font-weight-medium">{{ item.title }}</span>
+                          <span class="text-caption text-medium-emphasis ms-1">— {{ item.role }}</span>
+                        </div>
+                      </template>
+                      <template #no-data>
+                        <v-list-item title="No users found" />
+                      </template>
+                    </v-autocomplete>
                   </v-col>
                 </v-row>
                 <v-alert type="info" variant="tonal" density="compact" text="Organizers assigned to individual programs override this selection for their sessions." />
@@ -431,7 +508,7 @@
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
 const router = useRouter()
-const { rooms, companies, createWorkshop } = useAdminWorkshops()
+const { venues, companies, createWorkshop } = useAdminWorkshops()
 const { users } = useUsers()
 
 const form = reactive({
@@ -458,7 +535,7 @@ const companyOptions = computed(() =>
 )
 
 const selectedRoom = computed(() =>
-  rooms.value?.find(r => r.id === form.conference_room_id)
+  venues.value?.find(r => r.id === form.conference_room_id)
 )
 
 const STATUS_OPTIONS = [
@@ -467,8 +544,7 @@ const STATUS_OPTIONS = [
   { value: 'upcoming', label: 'Upcoming', sub: 'Confirmed, enrollment closed', dot: '#D97706' },
 ]
 const PROGRAM_OPTIONS = ['PM Fundamentals', 'Safety & Compliance', 'Leadership Essentials', 'HR Fundamentals', 'Digital Literacy', 'Risk Management', 'Custom (new program)']
-const trainerOptions = computed(() => (users.value ?? []).filter(u => u.role === 'trainer' || u.role === 'facilitator').map(u => u.name))
-const facilitatorOptions = computed(() => (users.value ?? []).filter(u => u.role === 'facilitator' || u.role === 'trainer').map(u => u.name))
+const userOptions = computed(() => (users.value ?? []).map(u => ({ title: u.name, value: u.id, role: u.role })))
 const SCHEDULE_OPTIONS = ['Morning (08:00–12:00)', 'Afternoon (13:00–17:00)', 'Full day (08:00–17:00)', 'Custom']
 const DAY_OPTIONS = ['Day 1', 'Day 2', 'Day 3']
 
@@ -477,7 +553,7 @@ interface ProgramItem {
   _key: number
   _open: boolean
   name: string
-  trainer_name: string | null
+  trainer_id: string | null
   schedule: string
   start_day: string
 }
@@ -485,7 +561,7 @@ const programs = ref<ProgramItem[]>([])
 
 function addProgram() {
   progKey++
-  programs.value.push({ _key: progKey, _open: true, name: '', trainer_name: null, schedule: 'Morning (08:00–12:00)', start_day: 'Day 1' })
+  programs.value.push({ _key: progKey, _open: true, name: '', trainer_id: null, schedule: 'Morning (08:00–12:00)', start_day: 'Day 1' })
 }
 
 function removeProgram(key: number) {
@@ -522,15 +598,15 @@ const summary = computed(() => {
   }
 
   const room = selectedRoom.value ? `${selectedRoom.value.name} · ${selectedRoom.value.venue_name}` : null
-  const trainer = form.facilitator_id || null
-  const facilitator = form.facilitator_assistant || null
+  const trainer = users.value?.find(u => u.id === form.facilitator_id)?.name || null
+  const facilitator = users.value?.find(u => u.id === form.facilitator_assistant)?.name || null
 
   const client = form.client_id
     ? companies.value?.find(c => c.id === form.client_id)?.name ?? null
     : null
 
   const cap = `${form.max_capacity} participants`
-  const progSummary = programs.value.map(p => ({ key: p._key, name: p.name, trainer: p.trainer_name || form.facilitator_id || '—' }))
+  const progSummary = programs.value.map(p => ({ key: p._key, name: p.name, trainer: users.value?.find(u => u.id === p.trainer_id)?.name || '—' }))
 
   return { title, dates, duration, room, trainer, facilitator, client, capacity: cap, programs: progSummary }
 })
@@ -541,18 +617,18 @@ function fmt(d: string) {
   return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-function save(publishStatus: string) {
+async function save(publishStatus: string) {
   status.value = publishStatus
-  handleSave()
-}
-
-async function handleSave() {
-  const { valid } = await formRef.value!.validate()
-  if (!valid) return
-
-  const loading = status.value === 'published' ? savingPublish : savingDraft
+  const loading = publishStatus === 'published' ? savingPublish : savingDraft
   loading.value = true
   try {
+    if (!formRef.value) throw new Error('Form not found')
+    const { valid } = await formRef.value.validate()
+    if (!valid) {
+      snackbar.value = { show: true, text: 'Please fix the highlighted errors', color: 'warning' }
+      return
+    }
+
     await createWorkshop({
       title: form.title,
       description: form.description || null,
@@ -560,12 +636,13 @@ async function handleSave() {
       date_end: form.dateRanges.filter(r => r.end).map(r => r.end).sort().slice(-1)[0],
       conference_room_id: form.conference_room_id,
       client_id: form.client_id,
+      facilitator_id: form.facilitator_id,
       status: status.value as any,
     })
     snackbar.value = { show: true, text: status.value === 'published' ? 'Workshop published!' : 'Workshop saved as draft.', color: 'success' }
     setTimeout(() => router.push('/manage/workshops'), 1200)
   } catch (err: any) {
-    snackbar.value = { show: true, text: err.message, color: 'error' }
+    snackbar.value = { show: true, text: err.message || err.toString(), color: 'error' }
   } finally {
     loading.value = false
   }

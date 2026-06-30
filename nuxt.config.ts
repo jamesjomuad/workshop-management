@@ -5,7 +5,7 @@ export default defineNuxtConfig({
     'vuetify-nuxt-module',
     '@pinia/nuxt',
     '@nuxtjs/color-mode',
-    '@nuxtjs/supabase',
+    '@nuxtjs/supabase'
   ],
   vite: {
     resolve: {

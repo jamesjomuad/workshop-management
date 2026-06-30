@@ -6,6 +6,7 @@ export default defineEventHandler(async (): Promise<ProgramWithRelations[]> => {
   const { data: programs, error } = await supabase
     .from('programs')
     .select('*')
+    .order('order_index')
     .order('created_at', { ascending: false })
 
   if (error) throw createError({ statusCode: 500, message: error.message })

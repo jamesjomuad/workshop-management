@@ -10,6 +10,9 @@ export default defineEventHandler(async (event): Promise<Program> => {
       title: body.title,
       description: body.description || null,
       status: body.status || 'upcoming',
+      order_index: body.order_index ?? 0,
+      slug: body.slug || null,
+      content: body.content || null,
       created_by: body.created_by || null,
     })
     .select()

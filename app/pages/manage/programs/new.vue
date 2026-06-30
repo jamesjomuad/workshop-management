@@ -13,7 +13,7 @@
     <v-row>
       <v-col cols="12" md="8">
         <v-form ref="formRef">
-          <v-card variant="outlined" rounded="lg">
+          <v-card variant="outlined" rounded="lg" class="mb-4">
             <v-card-item>
               <template #prepend>
                 <v-icon color="primary" class="me-2">mdi-book-open-variant</v-icon>
@@ -45,6 +45,56 @@
               />
             </v-card-text>
           </v-card>
+
+          <v-card variant="outlined" rounded="lg">
+            <v-card-item>
+              <template #prepend>
+                <v-icon color="secondary" class="me-2">mdi-order-bool-ascending</v-icon>
+                <div>
+                  <v-card-title class="text-body-1 font-weight-bold">Topics</v-card-title>
+                  <v-card-subtitle>Add the topics this program will cover</v-card-subtitle>
+                </div>
+              </template>
+              <template #append>
+                <v-btn size="small" color="primary" variant="tonal" prepend-icon="mdi-plus" @click="addTopicInput">
+                  Add topic
+                </v-btn>
+              </template>
+            </v-card-item>
+            <v-divider />
+            <v-card-text>
+              <div v-if="topics.length === 0" class="py-4 text-center text-medium-emphasis">
+                <v-icon size="32" class="mb-1">mdi-playlist-plus</v-icon>
+                <div class="text-body-2">No topics yet</div>
+                <div class="text-caption mt-1">Add topics to outline the curriculum content</div>
+              </div>
+              <draggable
+                v-model="topics"
+                item-key="id"
+                handle=".drag-topic"
+                :animation="200"
+              >
+                <template #item="{ element: topic, index }">
+                  <div class="d-flex align-center ga-2 mb-2">
+                    <v-icon class="drag-topic cursor-grab text-medium-emphasis" size="18">mdi-drag</v-icon>
+                    <v-avatar size="24" color="secondary" variant="tonal" class="text-caption font-weight-bold">{{ index + 1 }}</v-avatar>
+                    <v-text-field
+                      v-model="topic.title"
+                      variant="outlined"
+                      density="compact"
+                      hide-details
+                      placeholder="Topic title"
+                      class="flex-grow-1"
+                      @keyup.enter="addTopicInput"
+                    />
+                    <v-btn icon variant="text" size="small" color="error" @click="topics.splice(index, 1)">
+                      <v-icon size="16">mdi-close</v-icon>
+                    </v-btn>
+                  </div>
+                </template>
+              </draggable>
+            </v-card-text>
+          </v-card>
         </v-form>
       </v-col>
 
@@ -66,6 +116,12 @@
                 <span :class="{ 'text-medium-emphasis': !form.description }">{{ form.description || 'None' }}</span>
               </template>
             </v-list-item>
+            <v-divider />
+            <v-list-item title="Topics">
+              <template #subtitle>
+                <span :class="{ 'text-medium-emphasis': topics.length === 0 }">{{ topics.length || 'None' }}</span>
+              </template>
+            </v-list-item>
           </v-list>
         </v-card>
 
@@ -82,19 +138,27 @@
 </template>
 
 <script setup lang="ts">
+import draggable from 'vuedraggable'
+
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
 const router = useRouter()
-const { createProgram } = useAdminPrograms()
+const { createProgram, createSection, createLesson, createTopic } = useAdminPrograms()
 
 const form = reactive({
   title: '',
   description: '',
 })
+const topics = reactive<{ id: number; title: string }[]>([])
+let topicIdCounter = 0
 const saving = ref(false)
 const formRef = ref<VForm>()
 
 const required = [(v: any) => !!v || 'Required']
+
+function addTopicInput() {
+  topics.push({ id: ++topicIdCounter, title: '' })
+}
 
 async function save() {
   saving.value = true
@@ -110,8 +174,36 @@ async function save() {
       title: form.title,
       description: form.description || null,
     })
+
+    const programId = created.id
+
+    if (topics.length > 0) {
+      const section = await createSection({
+        program_id: programId,
+        title: 'General',
+        sort_order: 0,
+      })
+
+      for (let i = 0; i < topics.length; i++) {
+        const title = topics[i].title.trim()
+        if (!title) continue
+
+        const lesson = await createLesson({
+          section_id: section.id,
+          title,
+          sort_order: i,
+        })
+
+        await createTopic({
+          lesson_id: lesson.id,
+          title: `${title} Overview`,
+          sort_order: 0,
+        })
+      }
+    }
+
     snackbar.value = { show: true, text: 'Program created!', color: 'success' }
-    setTimeout(() => router.push(`/manage/programs/${created.id}`), 1200)
+    setTimeout(() => router.push(`/manage/programs/${programId}`), 1200)
   } catch (err: any) {
     snackbar.value = { show: true, text: err.message || err.toString(), color: 'error' }
   } finally {
@@ -121,3 +213,8 @@ async function save() {
 
 const snackbar = ref({ show: false, text: '', color: 'success' })
 </script>
+
+<style scoped>
+.cursor-grab { cursor: grab; }
+.cursor-grab:active { cursor: grabbing; }
+</style>

@@ -33,7 +33,6 @@
           </v-card-text>
         </v-card>
 
-        <!-- Sections -->
         <div class="d-flex align-center mb-3">
           <h2 class="text-h6 font-weight-bold">Curriculum</h2>
           <v-spacer />
@@ -58,145 +57,164 @@
           <div class="text-caption mt-1">Add a section to start building your curriculum</div>
         </div>
 
-        <div v-for="(section, si) in program?.sections ?? []" :key="section.id" class="mb-3">
-          <v-card variant="outlined" rounded="lg">
-            <v-card-item>
-              <template #prepend>
-                <v-avatar size="28" color="primary" variant="tonal" class="text-body-2 font-weight-bold">{{ si + 1 }}</v-avatar>
-              </template>
+        <draggable
+          v-model="localSections"
+          item-key="id"
+          handle=".drag-section"
+          :animation="250"
+          @end="onReorderSections"
+        >
+          <template #item="{ element: section, index: si }">
+            <div class="mb-3">
+              <v-card variant="outlined" rounded="lg">
+                <v-card-item>
+                  <template #prepend>
+                    <v-icon class="drag-section cursor-grab me-2 text-medium-emphasis" size="18">mdi-drag</v-icon>
+                    <v-avatar size="28" color="primary" variant="tonal" class="text-body-2 font-weight-bold">{{ si + 1 }}</v-avatar>
+                  </template>
 
-              <template v-if="editingSection === section.id">
-                <v-text-field v-model="editSectionTitle" variant="outlined" density="compact" hide-details class="mr-2" @keyup.enter="updateSection(section)" />
-              </template>
-              <template v-else>
-                <v-card-title class="text-body-1 font-weight-bold">{{ section.title }}</v-card-title>
-              </template>
-
-              <template #append>
-                <template v-if="editingSection === section.id">
-                  <v-btn icon variant="text" size="small" color="primary" @click="updateSection(section)"><v-icon>mdi-check</v-icon></v-btn>
-                  <v-btn icon variant="text" size="small" @click="cancelEditSection"><v-icon>mdi-close</v-icon></v-btn>
-                </template>
-                <template v-else>
-                  <v-btn icon variant="text" size="small" @click="startEditSection(section)"><v-icon>mdi-pencil</v-icon></v-btn>
-                  <v-btn icon variant="text" size="small" color="error" @click="deleteSection(section)"><v-icon>mdi-delete</v-icon></v-btn>
-                </template>
-              </template>
-            </v-card-item>
-
-            <v-divider />
-
-            <!-- Lessons -->
-            <v-list lines="one" density="compact">
-              <v-list-item v-for="(lesson, li) in section.lessons" :key="lesson.id">
-                <template #prepend>
-                  <v-icon size="14" color="primary" class="me-2">mdi-play-circle-outline</v-icon>
-                </template>
-
-                <template v-if="editingLesson === lesson.id">
-                  <v-text-field v-model="editLessonTitle" variant="outlined" density="compact" hide-details class="mr-2" @keyup.enter="updateLesson(lesson)" />
-                </template>
-                <template v-else>
-                  <v-list-item-title class="text-body-2">
-                    {{ lesson.title }}
-                    <v-chip v-if="lesson.status" size="x-small" :color="chipColor(lesson.status)" variant="tonal" class="ml-2">
-                      {{ statusLabel(lesson.status) }}
-                    </v-chip>
-                  </v-list-item-title>
-                </template>
-
-                <template #append>
-                  <template v-if="editingLesson === lesson.id">
-                    <v-btn icon variant="text" size="x-small" color="primary" @click="updateLesson(lesson)"><v-icon>mdi-check</v-icon></v-btn>
-                    <v-btn icon variant="text" size="x-small" @click="cancelEditLesson"><v-icon>mdi-close</v-icon></v-btn>
+                  <template v-if="editingSection === section.id">
+                    <v-text-field v-model="editSectionTitle" variant="outlined" density="compact" hide-details class="mr-2" @keyup.enter="updateSection(section)" />
                   </template>
                   <template v-else>
-                    <v-btn icon variant="text" size="x-small" @click="startEditLesson(lesson)"><v-icon size="14">mdi-pencil</v-icon></v-btn>
-                    <v-btn icon variant="text" size="x-small" color="error" @click="deleteLesson(lesson)"><v-icon size="14">mdi-delete</v-icon></v-btn>
+                    <v-card-title class="text-body-1 font-weight-bold">{{ section.title }}</v-card-title>
                   </template>
-                </template>
 
-                <!-- Topics nested under lesson -->
-                <template #subtitle>
-                  <template v-if="lesson.topics?.length">
-                    <div class="ml-6 mt-1 d-flex flex-column ga-1">
-                      <div v-for="(topic, ti) in lesson.topics" :key="topic.id" class="d-flex align-center ga-1">
-                        <v-icon size="10" class="text-medium-emphasis">mdi-circle-small</v-icon>
+                  <template #append>
+                    <template v-if="editingSection === section.id">
+                      <v-btn icon variant="text" size="small" color="primary" @click="updateSection(section)"><v-icon>mdi-check</v-icon></v-btn>
+                      <v-btn icon variant="text" size="small" @click="cancelEditSection"><v-icon>mdi-close</v-icon></v-btn>
+                    </template>
+                    <template v-else>
+                      <v-btn icon variant="text" size="small" @click="startEditSection(section)"><v-icon>mdi-pencil</v-icon></v-btn>
+                      <v-btn icon variant="text" size="small" color="error" @click="deleteSection(section)"><v-icon>mdi-delete</v-icon></v-btn>
+                    </template>
+                  </template>
+                </v-card-item>
 
-                        <template v-if="editingTopic === topic.id">
-                          <v-text-field v-model="editTopicTitle" variant="plain" density="compact" hide-details class="mr-1" style="max-width:200px" @keyup.enter="updateTopic(topic)" />
+                <v-divider />
+
+                <draggable
+                  v-model="section.lessons"
+                  item-key="id"
+                  handle=".drag-lesson"
+                  :animation="250"
+                  group="lessons"
+                  @end="onReorderLessons"
+                >
+                  <template #item="{ element: lesson, index: li }">
+                    <v-list lines="one" density="compact">
+                      <v-list-item>
+                        <template #prepend>
+                          <v-icon class="drag-lesson cursor-grab me-1 text-medium-emphasis" size="14">mdi-drag</v-icon>
+                          <v-icon size="14" color="primary" class="me-2">mdi-play-circle-outline</v-icon>
+                        </template>
+
+                        <template v-if="editingLesson === lesson.id">
+                          <v-text-field v-model="editLessonTitle" variant="outlined" density="compact" hide-details class="mr-2" @keyup.enter="updateLesson(lesson)" />
                         </template>
                         <template v-else>
-                          <span class="text-caption">{{ topic.title }}</span>
-                          <v-chip v-if="topic.status" size="x-small" :color="chipColor(topic.status)" variant="tonal" class="ml-1">{{ statusLabel(topic.status) }}</v-chip>
+                          <v-list-item-title class="text-body-2">
+                            {{ lesson.title }}
+                            <v-chip v-if="lesson.status" size="x-small" :color="chipColor(lesson.status)" variant="tonal" class="ml-2">
+                              {{ statusLabel(lesson.status) }}
+                            </v-chip>
+                          </v-list-item-title>
                         </template>
 
-                        <template v-if="editingTopic === topic.id">
-                          <v-btn icon variant="text" size="x-small" color="primary" @click="updateTopic(topic)"><v-icon size="12">mdi-check</v-icon></v-btn>
-                          <v-btn icon variant="text" size="x-small" @click="cancelEditTopic"><v-icon size="12">mdi-close</v-icon></v-btn>
-                        </template>
-                        <template v-else>
-                          <v-btn icon variant="text" size="x-small" @click="startEditTopic(topic)"><v-icon size="12">mdi-pencil</v-icon></v-btn>
-                          <v-btn icon variant="text" size="x-small" color="error" @click="deleteTopic(topic)"><v-icon size="12">mdi-delete</v-icon></v-btn>
+                        <template #append>
+                          <template v-if="editingLesson === lesson.id">
+                            <v-btn icon variant="text" size="x-small" color="primary" @click="updateLesson(lesson)"><v-icon>mdi-check</v-icon></v-btn>
+                            <v-btn icon variant="text" size="x-small" @click="cancelEditLesson"><v-icon>mdi-close</v-icon></v-btn>
+                          </template>
+                          <template v-else>
+                            <v-btn icon variant="text" size="x-small" @click="startEditLesson(lesson)"><v-icon size="14">mdi-pencil</v-icon></v-btn>
+                            <v-btn icon variant="text" size="x-small" color="error" @click="deleteLesson(lesson)"><v-icon size="14">mdi-delete</v-icon></v-btn>
+                          </template>
                         </template>
 
-                        <template v-if="topic.quiz">
-                          <v-chip size="x-small" :color="topic.quiz.type === 'quiz' ? 'warning' : 'info'" variant="tonal" class="ml-1">
-                            <template #prepend>
-                              <v-icon size="10">{{ topic.quiz.type === 'quiz' ? 'mdi-help-circle-outline' : 'mdi-file-document-edit-outline' }}</v-icon>
-                            </template>
-                            {{ topic.quiz.title }}
-                            <v-btn icon variant="text" size="x-small" color="error" class="ml-1" @click.stop="deleteQuiz(topic.quiz!)">
-                              <v-icon size="10">mdi-close</v-icon>
-                            </v-btn>
-                          </v-chip>
-                        </template>
-                        <template v-else>
-                          <v-btn size="x-small" variant="text" color="warning" class="ml-1" @click="startAddQuiz(topic)">
-                            <v-icon size="12">mdi-help-circle-outline</v-icon>
+                        <template #subtitle>
+                          <template v-if="lesson.topics?.length">
+                            <draggable
+                              v-model="lesson.topics"
+                              item-key="id"
+                              handle=".drag-topic"
+                              :animation="250"
+                              group="topics"
+                              @end="onReorderTopics"
+                            >
+                              <template #item="{ element: topic, index: ti }">
+                                <div class="ml-6 mt-1 d-flex align-center ga-1">
+                                  <v-icon class="drag-topic cursor-grab text-medium-emphasis" size="10">mdi-drag-vertical</v-icon>
+                                  <v-icon size="10" class="text-medium-emphasis">mdi-circle-small</v-icon>
+
+                                  <template v-if="editingTopic === topic.id">
+                                    <v-text-field v-model="editTopicTitle" variant="plain" density="compact" hide-details class="mr-1" style="max-width:200px" @keyup.enter="updateTopic(topic)" />
+                                  </template>
+                                  <template v-else>
+                                    <span class="text-caption">{{ topic.title }}</span>
+                                    <v-chip v-if="topic.status" size="x-small" :color="chipColor(topic.status)" variant="tonal" class="ml-1">{{ statusLabel(topic.status) }}</v-chip>
+                                  </template>
+
+                                  <template v-if="editingTopic === topic.id">
+                                    <v-btn icon variant="text" size="x-small" color="primary" @click="updateTopic(topic)"><v-icon size="12">mdi-check</v-icon></v-btn>
+                                    <v-btn icon variant="text" size="x-small" @click="cancelEditTopic"><v-icon size="12">mdi-close</v-icon></v-btn>
+                                  </template>
+                                  <template v-else>
+                                    <v-btn icon variant="text" size="x-small" @click="startEditTopic(topic)"><v-icon size="12">mdi-pencil</v-icon></v-btn>
+                                    <v-btn icon variant="text" size="x-small" color="error" @click="deleteTopic(topic)"><v-icon size="12">mdi-delete</v-icon></v-btn>
+                                  </template>
+
+                                  <template v-if="topic.quiz">
+                                    <v-chip size="x-small" :color="topic.quiz.type === 'quiz' ? 'warning' : 'info'" variant="tonal" class="ml-1">
+                                      <template #prepend>
+                                        <v-icon size="10">{{ topic.quiz.type === 'quiz' ? 'mdi-help-circle-outline' : 'mdi-file-document-edit-outline' }}</v-icon>
+                                      </template>
+                                      {{ topic.quiz.title }}
+                                      <v-btn icon variant="text" size="x-small" color="error" class="ml-1" @click.stop="deleteQuiz(topic.quiz!)">
+                                        <v-icon size="10">mdi-close</v-icon>
+                                      </v-btn>
+                                    </v-chip>
+                                  </template>
+                                  <template v-else>
+                                    <v-btn size="x-small" variant="text" color="warning" class="ml-1" @click="startAddQuiz(topic)">
+                                      <v-icon size="12">mdi-help-circle-outline</v-icon>
+                                    </v-btn>
+                                  </template>
+                                </div>
+                              </template>
+                            </draggable>
+                          </template>
+
+                          <div v-if="addingTopicLesson === lesson.id" class="d-flex align-center ga-1 ml-4 mt-1">
+                            <v-text-field v-model="newTopicTitle" variant="outlined" density="compact" hide-details placeholder="Topic title" style="max-width:200px" @keyup.enter="addTopic(lesson)" />
+                            <v-btn size="x-small" color="primary" variant="tonal" :loading="savingTopic" @click="addTopic(lesson)">Add</v-btn>
+                            <v-btn size="x-small" variant="text" @click="cancelAddTopic">Cancel</v-btn>
+                          </div>
+                          <v-btn v-else size="x-small" variant="text" color="primary" class="ml-6 mt-1" @click="startAddTopic(lesson)">
+                            <v-icon size="12" class="me-1">mdi-plus</v-icon>
+                            <span class="text-caption">Topic</span>
                           </v-btn>
                         </template>
-                      </div>
-
-                      <div v-if="addingTopicLesson === lesson.id" class="d-flex align-center ga-1 ml-4 mt-1">
-                        <v-text-field v-model="newTopicTitle" variant="outlined" density="compact" hide-details placeholder="Topic title" style="max-width:200px" @keyup.enter="addTopic(lesson)" />
-                        <v-btn size="x-small" color="primary" variant="tonal" :loading="savingTopic" @click="addTopic(lesson)">Add</v-btn>
-                        <v-btn size="x-small" variant="text" @click="cancelAddTopic">Cancel</v-btn>
-                      </div>
-                      <v-btn v-else size="x-small" variant="text" color="primary" class="ml-6 mt-1" @click="startAddTopic(lesson)">
-                        <v-icon size="12" class="me-1">mdi-plus</v-icon>
-                        <span class="text-caption">Topic</span>
-                      </v-btn>
-                    </div>
+                      </v-list-item>
+                    </v-list>
                   </template>
-                  <template v-else>
-                    <div v-if="addingTopicLesson === lesson.id" class="d-flex align-center ga-1">
-                      <v-text-field v-model="newTopicTitle" variant="outlined" density="compact" hide-details placeholder="Topic title" style="max-width:200px" @keyup.enter="addTopic(lesson)" />
-                      <v-btn size="x-small" color="primary" variant="tonal" :loading="savingTopic" @click="addTopic(lesson)">Add</v-btn>
-                      <v-btn size="x-small" variant="text" @click="cancelAddTopic">Cancel</v-btn>
-                    </div>
-                    <v-btn v-else size="x-small" variant="text" color="primary" @click="startAddTopic(lesson)">
-                      <v-icon size="12" class="me-1">mdi-plus</v-icon>
-                      <span class="text-caption">Topic</span>
-                    </v-btn>
-                  </template>
-                </template>
-              </v-list-item>
-            </v-list>
+                </draggable>
 
-            <v-divider />
+                <v-divider />
 
-            <!-- Add lesson -->
-            <div v-if="addingLessonSection === section.id" class="pa-3 d-flex align-center ga-2">
-              <v-text-field v-model="newLessonTitle" label="Lesson title" variant="outlined" density="compact" hide-details autofocus @keyup.enter="addLesson(section)" />
-              <v-btn color="primary" variant="tonal" :loading="savingLesson" @click="addLesson(section)">Add</v-btn>
-              <v-btn variant="text" @click="cancelAddLesson">Cancel</v-btn>
+                <div v-if="addingLessonSection === section.id" class="pa-3 d-flex align-center ga-2">
+                  <v-text-field v-model="newLessonTitle" label="Lesson title" variant="outlined" density="compact" hide-details autofocus @keyup.enter="addLesson(section)" />
+                  <v-btn color="primary" variant="tonal" :loading="savingLesson" @click="addLesson(section)">Add</v-btn>
+                  <v-btn variant="text" @click="cancelAddLesson">Cancel</v-btn>
+                </div>
+                <v-btn v-else variant="text" size="small" color="primary" class="ma-2" prepend-icon="mdi-plus" @click="startAddLesson(section)">
+                  Lesson
+                </v-btn>
+              </v-card>
             </div>
-            <v-btn v-else variant="text" size="small" color="primary" class="ma-2" prepend-icon="mdi-plus" @click="startAddLesson(section)">
-              Lesson
-            </v-btn>
-          </v-card>
-        </div>
+          </template>
+        </draggable>
       </v-col>
 
       <v-col cols="12" md="4">
@@ -219,7 +237,6 @@
             </v-list>
           </v-card>
 
-          <!-- Add Quiz dialog -->
           <v-dialog v-model="quizDialog" max-width="400">
             <v-card>
               <v-card-title class="text-body-1 font-weight-bold">Add Quiz / Assignment</v-card-title>
@@ -235,7 +252,6 @@
             </v-card>
           </v-dialog>
 
-          <!-- Delete confirmation dialog -->
           <v-dialog v-model="deleteDialog" max-width="400">
             <v-card>
               <v-card-title class="text-body-1 font-weight-bold">Delete program?</v-card-title>
@@ -259,6 +275,7 @@
 
 <script setup lang="ts">
 import type { ProgramSection, ProgramLesson, ProgramTopic, ProgramQuiz } from '~/types'
+import draggable from 'vuedraggable'
 
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
@@ -273,9 +290,15 @@ const {
   createLesson: apiCreateLesson, updateLesson: apiUpdateLesson, deleteLesson: apiDeleteLesson,
   createTopic: apiCreateTopic, updateTopic: apiUpdateTopic, deleteTopic: apiDeleteTopic,
   createQuiz: apiCreateQuiz, deleteQuiz: apiDeleteQuiz,
+  reorderSections, reorderLessons, reorderTopics,
 } = useAdminPrograms()
 
 const program = computed(() => (programs.value ?? []).find(p => p.id === id))
+
+const localSections = computed({
+  get: () => program.value?.sections ?? [],
+  set: () => {},
+})
 
 const editTitle = ref('')
 const editDescription = ref('')
@@ -292,28 +315,24 @@ watch(program, (p) => {
   }
 }, { immediate: true })
 
-// Section state
 const addingSection = ref(false)
 const newSectionTitle = ref('')
 const savingSection = ref(false)
 const editingSection = ref<string | null>(null)
 const editSectionTitle = ref('')
 
-// Lesson state
 const addingLessonSection = ref<string | null>(null)
 const newLessonTitle = ref('')
 const savingLesson = ref(false)
 const editingLesson = ref<string | null>(null)
 const editLessonTitle = ref('')
 
-// Topic state
 const addingTopicLesson = ref<string | null>(null)
 const newTopicTitle = ref('')
 const savingTopic = ref(false)
 const editingTopic = ref<string | null>(null)
 const editTopicTitle = ref('')
 
-// Quiz state
 const quizDialog = ref(false)
 const quizTopic = ref<ProgramTopic | null>(null)
 const quizForm = reactive({ title: '', type: 'quiz' })
@@ -345,7 +364,6 @@ const topicCount = computed(() => {
   return count
 })
 
-// Program CRUD
 async function saveProgram() {
   saving.value = true
   try {
@@ -379,7 +397,33 @@ async function doDelete() {
   }
 }
 
-// Section CRUD
+async function onReorderSections() {
+  const ids = (program.value?.sections ?? []).map(s => s.id)
+  await reorderSections(ids)
+}
+
+async function onReorderLessons() {
+  const ids: string[] = []
+  for (const s of program.value?.sections ?? []) {
+    for (const l of s.lessons ?? []) {
+      ids.push(l.id)
+    }
+  }
+  await reorderLessons(ids)
+}
+
+async function onReorderTopics() {
+  const ids: string[] = []
+  for (const s of program.value?.sections ?? []) {
+    for (const l of s.lessons ?? []) {
+      for (const t of l.topics ?? []) {
+        ids.push(t.id)
+      }
+    }
+  }
+  await reorderTopics(ids)
+}
+
 function cancelAddSection() {
   addingSection.value = false
   newSectionTitle.value = ''
@@ -428,7 +472,6 @@ async function deleteSection(section: ProgramSection) {
   }
 }
 
-// Lesson CRUD
 function startAddLesson(section: ProgramSection) {
   addingLessonSection.value = section.id
   newLessonTitle.value = ''
@@ -482,7 +525,6 @@ async function deleteLesson(lesson: ProgramLesson) {
   }
 }
 
-// Topic CRUD
 function startAddTopic(lesson: ProgramLesson) {
   addingTopicLesson.value = lesson.id
   newTopicTitle.value = ''
@@ -536,7 +578,6 @@ async function deleteTopic(topic: ProgramTopic) {
   }
 }
 
-// Quiz CRUD
 function startAddQuiz(topic: ProgramTopic) {
   quizTopic.value = topic
   quizForm.title = ''
@@ -569,3 +610,8 @@ async function deleteQuiz(quiz: ProgramQuiz) {
 
 const snackbar = ref({ show: false, text: '', color: 'success' })
 </script>
+
+<style scoped>
+.cursor-grab { cursor: grab; }
+.cursor-grab:active { cursor: grabbing; }
+</style>

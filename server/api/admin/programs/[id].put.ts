@@ -11,6 +11,9 @@ export default defineEventHandler(async (event): Promise<Program> => {
       title: body.title,
       description: body.description ?? null,
       status: body.status,
+      order_index: body.order_index,
+      slug: body.slug,
+      content: body.content,
     })
     .eq('id', id)
     .select()

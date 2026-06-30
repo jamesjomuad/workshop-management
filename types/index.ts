@@ -115,6 +115,9 @@ export interface Program {
   id: string
   title: string
   description: string | null
+  content: Record<string, any> | null
+  slug: string | null
+  order_index: number
   status: 'upcoming' | 'ongoing' | 'completed'
   created_by: string | null
   created_at: string
@@ -143,6 +146,7 @@ export interface ProgramTopic {
   id: string
   lesson_id: string
   title: string
+  content: Record<string, any> | null
   status: 'upcoming' | 'ongoing' | 'completed'
   sort_order: number
   created_at: string
@@ -163,6 +167,7 @@ export interface ProgramSection {
   id: string
   program_id: string
   title: string
+  content: Record<string, any> | null
   sort_order: number
   created_at: string
   lessons: ProgramLesson[]

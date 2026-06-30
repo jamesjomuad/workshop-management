@@ -19,6 +19,11 @@ export function useAdminPrograms() {
     await refresh()
   }
 
+  async function reorderPrograms(ids: string[]) {
+    await $fetch('/api/admin/programs/reorder', { method: 'POST', body: { ids } })
+    await refresh()
+  }
+
   async function createSection(payload: Partial<ProgramSection>) {
     const data = await $fetch<ProgramSection>('/api/admin/sections', { method: 'POST', body: payload })
     await refresh()
@@ -32,6 +37,11 @@ export function useAdminPrograms() {
 
   async function deleteSection(id: string) {
     await $fetch(`/api/admin/sections/${id}`, { method: 'DELETE' })
+    await refresh()
+  }
+
+  async function reorderSections(ids: string[]) {
+    await $fetch('/api/admin/sections/reorder', { method: 'POST', body: { ids } })
     await refresh()
   }
 
@@ -51,6 +61,11 @@ export function useAdminPrograms() {
     await refresh()
   }
 
+  async function reorderLessons(ids: string[]) {
+    await $fetch('/api/admin/lessons/reorder', { method: 'POST', body: { ids } })
+    await refresh()
+  }
+
   async function createTopic(payload: Partial<ProgramTopic>) {
     const data = await $fetch<ProgramTopic>('/api/admin/topics', { method: 'POST', body: payload })
     await refresh()
@@ -64,6 +79,11 @@ export function useAdminPrograms() {
 
   async function deleteTopic(id: string) {
     await $fetch(`/api/admin/topics/${id}`, { method: 'DELETE' })
+    await refresh()
+  }
+
+  async function reorderTopics(ids: string[]) {
+    await $fetch('/api/admin/topics/reorder', { method: 'POST', body: { ids } })
     await refresh()
   }
 
@@ -85,10 +105,10 @@ export function useAdminPrograms() {
 
   return {
     programs, pending, error, refresh,
-    createProgram, updateProgram, deleteProgram,
-    createSection, updateSection, deleteSection,
-    createLesson, updateLesson, deleteLesson,
-    createTopic, updateTopic, deleteTopic,
+    createProgram, updateProgram, deleteProgram, reorderPrograms,
+    createSection, updateSection, deleteSection, reorderSections,
+    createLesson, updateLesson, deleteLesson, reorderLessons,
+    createTopic, updateTopic, deleteTopic, reorderTopics,
     createQuiz, updateQuiz, deleteQuiz,
   }
 }

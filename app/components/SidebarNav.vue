@@ -48,7 +48,7 @@ const { logout } = useAuth()
 const Main = [
   { title: 'Dashboard', icon: 'mdi-view-dashboard', to: '/manage' },
   { title: 'Workshops', icon: 'mdi-calendar-text', to: '/manage/workshops' },
-  { title: 'Programs & Sessions', icon: 'mdi-book-open-variant', to: '/manage/programs' },
+  { title: 'Programs', icon: 'mdi-book-open-variant', to: '/manage/programs' },
   { title: 'Enrollments', icon: 'mdi-account-check', to: '/manage/enrollments' },
   { title: 'Venues', icon: 'mdi-door-open', to: '/manage/venues' },
   { title: 'Contacts', icon: 'mdi-contacts', to: '/manage/contacts' },

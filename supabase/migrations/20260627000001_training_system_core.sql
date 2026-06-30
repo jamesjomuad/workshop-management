@@ -16,7 +16,7 @@ CREATE TABLE companies (
 CREATE TABLE user_roles (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE UNIQUE NOT NULL,
-  role TEXT NOT NULL CHECK (role IN ('admin', 'staff', 'trainer', 'facilitator', 'trainee', 'client')),
+  role TEXT NOT NULL CHECK (role IN ('admin', 'staff', 'trainer', 'facilitator', 'trainee', 'client', 'organizer')),
   company_id UUID REFERENCES companies(id),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -61,9 +61,58 @@ CREATE TABLE programs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   title TEXT NOT NULL,
   description TEXT,
+  status TEXT NOT NULL DEFAULT 'upcoming' CHECK (status IN ('upcoming', 'ongoing', 'completed')),
   created_by UUID REFERENCES user_roles(id),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================
+-- Program Sections
+-- ============================================
+CREATE TABLE program_sections (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  program_id UUID REFERENCES programs(id) ON DELETE CASCADE NOT NULL,
+  title TEXT NOT NULL,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================
+-- Program Lessons
+-- ============================================
+CREATE TABLE program_lessons (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  section_id UUID REFERENCES program_sections(id) ON DELETE CASCADE NOT NULL,
+  title TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'upcoming' CHECK (status IN ('upcoming', 'ongoing', 'completed')),
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================
+-- Program Topics
+-- ============================================
+CREATE TABLE program_topics (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  lesson_id UUID REFERENCES program_lessons(id) ON DELETE CASCADE NOT NULL,
+  title TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'upcoming' CHECK (status IN ('upcoming', 'ongoing', 'completed')),
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================
+-- Program Quizzes / Assignments
+-- ============================================
+CREATE TABLE program_quizzes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  topic_id UUID REFERENCES program_topics(id) ON DELETE CASCADE NOT NULL,
+  title TEXT NOT NULL,
+  type TEXT NOT NULL CHECK (type IN ('quiz', 'assignment')),
+  status TEXT NOT NULL DEFAULT 'upcoming' CHECK (status IN ('upcoming', 'ongoing', 'completed')),
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- ============================================
@@ -76,21 +125,6 @@ CREATE TABLE workshop_programs (
   trainer_id UUID REFERENCES user_roles(id),
   notes TEXT,
   UNIQUE(workshop_id, program_id)
-);
-
--- ============================================
--- Sessions (per workshop_program, per day)
--- ============================================
-CREATE TABLE sessions (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  workshop_program_id UUID REFERENCES workshop_programs(id) ON DELETE CASCADE NOT NULL,
-  title TEXT NOT NULL,
-  day_number INTEGER NOT NULL,
-  time_start TIME NOT NULL,
-  time_end TIME NOT NULL,
-  status TEXT NOT NULL DEFAULT 'upcoming' CHECK (status IN ('upcoming', 'ongoing', 'completed')),
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- ============================================
@@ -107,11 +141,15 @@ CREATE TABLE enrollments (
 );
 
 -- ============================================
--- Attendance (per session per enrollment)
+-- Attendance (per learner per session)
+-- Note: FK to sessions removed; sessions table
+-- was replaced by the program hierarchy.
+-- Revisit attendance model when implementing
+-- attendance tracking in Phase 3.
 -- ============================================
 CREATE TABLE attendance (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  session_id UUID REFERENCES sessions(id) ON DELETE CASCADE NOT NULL,
+  session_id UUID NOT NULL,
   enrollment_id UUID REFERENCES enrollments(id) ON DELETE CASCADE NOT NULL,
   status TEXT NOT NULL CHECK (status IN ('present', 'absent', 'late')),
   marked_at TIMESTAMPTZ DEFAULT NOW(),
@@ -127,8 +165,11 @@ ALTER TABLE user_roles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE venues ENABLE ROW LEVEL SECURITY;
 ALTER TABLE workshops ENABLE ROW LEVEL SECURITY;
 ALTER TABLE programs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE program_sections ENABLE ROW LEVEL SECURITY;
+ALTER TABLE program_lessons ENABLE ROW LEVEL SECURITY;
+ALTER TABLE program_topics ENABLE ROW LEVEL SECURITY;
+ALTER TABLE program_quizzes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE workshop_programs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE enrollments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE attendance ENABLE ROW LEVEL SECURITY;
 
@@ -150,15 +191,15 @@ CREATE POLICY "All authenticated users can view companies"
   TO authenticated
   USING (true);
 
-CREATE POLICY "Admin and staff can insert companies"
+CREATE POLICY "Admin, staff, and organizers can insert companies"
   ON companies FOR INSERT
   TO authenticated
-  WITH CHECK (get_user_role() IN ('admin', 'staff'));
+  WITH CHECK (get_user_role() IN ('admin', 'staff', 'organizer'));
 
-CREATE POLICY "Admin and staff can update companies"
+CREATE POLICY "Admin, staff, and organizers can update companies"
   ON companies FOR UPDATE
   TO authenticated
-  USING (get_user_role() IN ('admin', 'staff'));
+  USING (get_user_role() IN ('admin', 'staff', 'organizer'));
 
 CREATE POLICY "Only admin can delete companies"
   ON companies FOR DELETE
@@ -194,22 +235,22 @@ CREATE POLICY "Only admin can delete roles"
   USING (get_user_role() = 'admin');
 
 -- ============================================
--- RLS Policies: Conference Rooms
+-- RLS Policies: Venues
 -- ============================================
-CREATE POLICY "All authenticated users can view rooms"
+CREATE POLICY "All authenticated users can view venues"
   ON venues FOR SELECT
   TO authenticated
   USING (true);
 
-CREATE POLICY "Admin and staff can insert venues"
+CREATE POLICY "Admin, staff, and organizers can insert venues"
   ON venues FOR INSERT
   TO authenticated
-  WITH CHECK (get_user_role() IN ('admin', 'staff'));
+  WITH CHECK (get_user_role() IN ('admin', 'staff', 'organizer'));
 
-CREATE POLICY "Admin and staff can update venues"
+CREATE POLICY "Admin, staff, and organizers can update venues"
   ON venues FOR UPDATE
   TO authenticated
-  USING (get_user_role() IN ('admin', 'staff'));
+  USING (get_user_role() IN ('admin', 'staff', 'organizer'));
 
 CREATE POLICY "Only admin can delete venues"
   ON venues FOR DELETE
@@ -224,15 +265,15 @@ CREATE POLICY "All authenticated users can view workshops"
   TO authenticated
   USING (true);
 
-CREATE POLICY "Admin and staff can insert workshops"
+CREATE POLICY "Admin, staff, and organizers can insert workshops"
   ON workshops FOR INSERT
   TO authenticated
-  WITH CHECK (get_user_role() IN ('admin', 'staff'));
+  WITH CHECK (get_user_role() IN ('admin', 'staff', 'organizer'));
 
-CREATE POLICY "Admin and staff can update workshops"
+CREATE POLICY "Admin, staff, and organizers can update workshops"
   ON workshops FOR UPDATE
   TO authenticated
-  USING (get_user_role() IN ('admin', 'staff'));
+  USING (get_user_role() IN ('admin', 'staff', 'organizer'));
 
 CREATE POLICY "Only admin can delete workshops"
   ON workshops FOR DELETE
@@ -247,15 +288,15 @@ CREATE POLICY "All authenticated users can view programs"
   TO authenticated
   USING (true);
 
-CREATE POLICY "Admin, staff, and trainers can insert programs"
+CREATE POLICY "Admin, staff, trainers, and organizers can insert programs"
   ON programs FOR INSERT
   TO authenticated
-  WITH CHECK (get_user_role() IN ('admin', 'staff', 'trainer'));
+  WITH CHECK (get_user_role() IN ('admin', 'staff', 'trainer', 'organizer'));
 
-CREATE POLICY "Admin, staff, and trainers can update programs"
+CREATE POLICY "Admin, staff, trainers, and organizers can update programs"
   ON programs FOR UPDATE
   TO authenticated
-  USING (get_user_role() IN ('admin', 'staff', 'trainer'));
+  USING (get_user_role() IN ('admin', 'staff', 'trainer', 'organizer'));
 
 CREATE POLICY "Only admin can delete programs"
   ON programs FOR DELETE
@@ -270,15 +311,15 @@ CREATE POLICY "All authenticated users can view workshop_programs"
   TO authenticated
   USING (true);
 
-CREATE POLICY "Admin and staff can insert workshop_programs"
+CREATE POLICY "Admin, staff, and organizers can insert workshop_programs"
   ON workshop_programs FOR INSERT
   TO authenticated
-  WITH CHECK (get_user_role() IN ('admin', 'staff'));
+  WITH CHECK (get_user_role() IN ('admin', 'staff', 'organizer'));
 
-CREATE POLICY "Admin and staff can update workshop_programs"
+CREATE POLICY "Admin, staff, and organizers can update workshop_programs"
   ON workshop_programs FOR UPDATE
   TO authenticated
-  USING (get_user_role() IN ('admin', 'staff'));
+  USING (get_user_role() IN ('admin', 'staff', 'organizer'));
 
 CREATE POLICY "Only admin can delete workshop_programs"
   ON workshop_programs FOR DELETE
@@ -286,25 +327,94 @@ CREATE POLICY "Only admin can delete workshop_programs"
   USING (get_user_role() = 'admin');
 
 -- ============================================
--- RLS Policies: Sessions
+-- RLS Policies: Program Sections
 -- ============================================
-CREATE POLICY "All authenticated users can view sessions"
-  ON sessions FOR SELECT
+CREATE POLICY "All authenticated users can view program sections"
+  ON program_sections FOR SELECT
   TO authenticated
   USING (true);
 
-CREATE POLICY "Admin, staff, and trainers can insert sessions"
-  ON sessions FOR INSERT
+CREATE POLICY "Admin, staff, trainers, and organizers can insert program sections"
+  ON program_sections FOR INSERT
   TO authenticated
-  WITH CHECK (get_user_role() IN ('admin', 'staff', 'trainer'));
+  WITH CHECK (get_user_role() IN ('admin', 'staff', 'trainer', 'organizer'));
 
-CREATE POLICY "Admin, staff, and trainers can update sessions"
-  ON sessions FOR UPDATE
+CREATE POLICY "Admin, staff, trainers, and organizers can update program sections"
+  ON program_sections FOR UPDATE
   TO authenticated
-  USING (get_user_role() IN ('admin', 'staff', 'trainer'));
+  USING (get_user_role() IN ('admin', 'staff', 'trainer', 'organizer'));
 
-CREATE POLICY "Only admin can delete sessions"
-  ON sessions FOR DELETE
+CREATE POLICY "Only admin can delete program sections"
+  ON program_sections FOR DELETE
+  TO authenticated
+  USING (get_user_role() = 'admin');
+
+-- ============================================
+-- RLS Policies: Program Lessons
+-- ============================================
+CREATE POLICY "All authenticated users can view program lessons"
+  ON program_lessons FOR SELECT
+  TO authenticated
+  USING (true);
+
+CREATE POLICY "Admin, staff, trainers, and organizers can insert program lessons"
+  ON program_lessons FOR INSERT
+  TO authenticated
+  WITH CHECK (get_user_role() IN ('admin', 'staff', 'trainer', 'organizer'));
+
+CREATE POLICY "Admin, staff, trainers, and organizers can update program lessons"
+  ON program_lessons FOR UPDATE
+  TO authenticated
+  USING (get_user_role() IN ('admin', 'staff', 'trainer', 'organizer'));
+
+CREATE POLICY "Only admin can delete program lessons"
+  ON program_lessons FOR DELETE
+  TO authenticated
+  USING (get_user_role() = 'admin');
+
+-- ============================================
+-- RLS Policies: Program Topics
+-- ============================================
+CREATE POLICY "All authenticated users can view program topics"
+  ON program_topics FOR SELECT
+  TO authenticated
+  USING (true);
+
+CREATE POLICY "Admin, staff, trainers, and organizers can insert program topics"
+  ON program_topics FOR INSERT
+  TO authenticated
+  WITH CHECK (get_user_role() IN ('admin', 'staff', 'trainer', 'organizer'));
+
+CREATE POLICY "Admin, staff, trainers, and organizers can update program topics"
+  ON program_topics FOR UPDATE
+  TO authenticated
+  USING (get_user_role() IN ('admin', 'staff', 'trainer', 'organizer'));
+
+CREATE POLICY "Only admin can delete program topics"
+  ON program_topics FOR DELETE
+  TO authenticated
+  USING (get_user_role() = 'admin');
+
+-- ============================================
+-- RLS Policies: Program Quizzes
+-- ============================================
+CREATE POLICY "All authenticated users can view program quizzes"
+  ON program_quizzes FOR SELECT
+  TO authenticated
+  USING (true);
+
+CREATE POLICY "Admin, staff, trainers, and organizers can insert program quizzes"
+  ON program_quizzes FOR INSERT
+  TO authenticated
+  WITH CHECK (get_user_role() IN ('admin', 'staff', 'trainer', 'organizer'));
+
+CREATE POLICY "Admin, staff, trainers, and organizers can update program quizzes"
+  ON program_quizzes FOR UPDATE
+  TO authenticated
+  USING (get_user_role() IN ('admin', 'staff', 'trainer', 'organizer'));
+
+CREATE POLICY "Only admin can delete program quizzes"
+  ON program_quizzes FOR DELETE
   TO authenticated
   USING (get_user_role() = 'admin');
 
@@ -316,20 +426,20 @@ CREATE POLICY "Users can view their own enrollments"
   TO authenticated
   USING (trainee_id = auth.uid());
 
-CREATE POLICY "Admin, staff, and facilitators can view all enrollments"
+CREATE POLICY "Admin, staff, facilitators, and organizers can view all enrollments"
   ON enrollments FOR SELECT
   TO authenticated
-  USING (get_user_role() IN ('admin', 'staff', 'facilitator'));
+  USING (get_user_role() IN ('admin', 'staff', 'facilitator', 'organizer'));
 
-CREATE POLICY "Admin and staff can insert enrollments"
+CREATE POLICY "Admin, staff, and organizers can insert enrollments"
   ON enrollments FOR INSERT
   TO authenticated
-  WITH CHECK (get_user_role() IN ('admin', 'staff'));
+  WITH CHECK (get_user_role() IN ('admin', 'staff', 'organizer'));
 
-CREATE POLICY "Admin and staff can update enrollments"
+CREATE POLICY "Admin, staff, and organizers can update enrollments"
   ON enrollments FOR UPDATE
   TO authenticated
-  USING (get_user_role() IN ('admin', 'staff'));
+  USING (get_user_role() IN ('admin', 'staff', 'organizer'));
 
 CREATE POLICY "Only admin can delete enrollments"
   ON enrollments FOR DELETE
@@ -349,20 +459,20 @@ CREATE POLICY "Users can view their own attendance"
     )
   );
 
-CREATE POLICY "Admin, staff, trainers, and facilitators can view all attendance"
+CREATE POLICY "Admin, staff, trainers, facilitators, and organizers can view all attendance"
   ON attendance FOR SELECT
   TO authenticated
-  USING (get_user_role() IN ('admin', 'staff', 'trainer', 'facilitator'));
+  USING (get_user_role() IN ('admin', 'staff', 'trainer', 'facilitator', 'organizer'));
 
-CREATE POLICY "Trainers and facilitators can mark attendance"
+CREATE POLICY "Trainers, facilitators, and organizers can mark attendance"
   ON attendance FOR INSERT
   TO authenticated
-  WITH CHECK (get_user_role() IN ('trainer', 'facilitator', 'admin', 'staff'));
+  WITH CHECK (get_user_role() IN ('trainer', 'facilitator', 'admin', 'staff', 'organizer'));
 
-CREATE POLICY "Trainers and facilitators can update attendance"
+CREATE POLICY "Trainers, facilitators, and organizers can update attendance"
   ON attendance FOR UPDATE
   TO authenticated
-  USING (get_user_role() IN ('trainer', 'facilitator', 'admin', 'staff'));
+  USING (get_user_role() IN ('trainer', 'facilitator', 'admin', 'staff', 'organizer'));
 
 CREATE POLICY "Only admin can delete attendance"
   ON attendance FOR DELETE
@@ -379,7 +489,10 @@ CREATE INDEX idx_workshops_date_start ON workshops(date_start);
 CREATE INDEX idx_workshops_conference_room ON workshops(conference_room_id);
 CREATE INDEX idx_workshop_programs_workshop ON workshop_programs(workshop_id);
 CREATE INDEX idx_workshop_programs_program ON workshop_programs(program_id);
-CREATE INDEX idx_sessions_program ON sessions(workshop_program_id);
+CREATE INDEX idx_program_sections_program ON program_sections(program_id);
+CREATE INDEX idx_program_lessons_section ON program_lessons(section_id);
+CREATE INDEX idx_program_topics_lesson ON program_topics(lesson_id);
+CREATE INDEX idx_program_quizzes_topic ON program_quizzes(topic_id);
 CREATE INDEX idx_enrollments_workshop ON enrollments(workshop_id);
 CREATE INDEX idx_enrollments_trainee ON enrollments(trainee_id);
 CREATE INDEX idx_attendance_session ON attendance(session_id);

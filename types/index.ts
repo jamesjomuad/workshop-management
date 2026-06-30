@@ -58,7 +58,7 @@ export interface Testimonial {
   rating: number
 }
 
-export type UserRole = 'admin' | 'staff' | 'trainer' | 'facilitator' | 'trainee' | 'client'
+export type UserRole = 'admin' | 'staff' | 'trainer' | 'facilitator' | 'trainee' | 'client' | 'organizer'
 
 export interface UserRoleRecord {
   id: string
@@ -115,6 +115,7 @@ export interface Program {
   id: string
   title: string
   description: string | null
+  status: 'upcoming' | 'ongoing' | 'completed'
   created_by: string | null
   created_at: string
   updated_at: string
@@ -128,16 +129,51 @@ export interface WorkshopProgram {
   notes: string | null
 }
 
-export interface Session {
+export interface ProgramQuiz {
   id: string
-  workshop_program_id: string
+  topic_id: string
   title: string
-  day_number: number
-  time_start: string
-  time_end: string
+  type: 'quiz' | 'assignment'
   status: 'upcoming' | 'ongoing' | 'completed'
+  sort_order: number
   created_at: string
-  updated_at: string
+}
+
+export interface ProgramTopic {
+  id: string
+  lesson_id: string
+  title: string
+  status: 'upcoming' | 'ongoing' | 'completed'
+  sort_order: number
+  created_at: string
+  quiz: ProgramQuiz | null
+}
+
+export interface ProgramLesson {
+  id: string
+  section_id: string
+  title: string
+  status: 'upcoming' | 'ongoing' | 'completed'
+  sort_order: number
+  created_at: string
+  topics: ProgramTopic[]
+}
+
+export interface ProgramSection {
+  id: string
+  program_id: string
+  title: string
+  sort_order: number
+  created_at: string
+  lessons: ProgramLesson[]
+}
+
+export interface ProgramWithRelations extends Program {
+  workshop_label?: string
+  workshop_date_start?: string
+  workshop_date_end?: string
+  trainer_name?: string
+  sections: ProgramSection[]
 }
 
 export interface Enrollment {

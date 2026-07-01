@@ -143,7 +143,7 @@ import draggable from 'vuedraggable'
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
 const router = useRouter()
-const { createProgram, createSection, createLesson, createTopic } = useAdminPrograms()
+const { createProgram, createTopic } = useAdminPrograms()
 
 const form = reactive({
   title: '',
@@ -177,29 +177,10 @@ async function save() {
 
     const programId = created.id
 
-    if (topics.length > 0) {
-      const section = await createSection({
-        program_id: programId,
-        title: 'General',
-        sort_order: 0,
-      })
-
-      for (let i = 0; i < topics.length; i++) {
-        const title = topics[i].title.trim()
-        if (!title) continue
-
-        const lesson = await createLesson({
-          section_id: section.id,
-          title,
-          sort_order: i,
-        })
-
-        await createTopic({
-          lesson_id: lesson.id,
-          title: `${title} Overview`,
-          sort_order: 0,
-        })
-      }
+    for (let i = 0; i < topics.length; i++) {
+      const title = topics[i].title.trim()
+      if (!title) continue
+      await createTopic({ program_id: programId, title, sort_order: i })
     }
 
     snackbar.value = { show: true, text: 'Program created!', color: 'success' }

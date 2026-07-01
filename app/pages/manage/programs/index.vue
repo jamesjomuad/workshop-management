@@ -29,6 +29,7 @@
         item-key="id"
         handle=".drag-handle"
         :animation="250"
+        class="d-flex flex-column ga-3"
         @end="onReorderPrograms"
       >
         <template #item="{ element: item }">
@@ -85,8 +86,8 @@
                 </template>
               </span>
               <span>
-                <v-icon size="14" class="me-1">mdi-silverware-variant</v-icon>
-                <strong>{{ totalLessons(item) }}</strong> lessons
+                <v-icon size="14" class="me-1">mdi-order-bool-ascending</v-icon>
+                <strong>{{ item.topics?.length ?? 0 }}</strong> topics
               </span>
               <span v-if="item.trainer_name">
                 <v-icon size="14" class="me-1">mdi-account</v-icon>
@@ -103,69 +104,25 @@
               </v-chip>
             </div>
 
-            <v-divider />
-
-            <div class="pa-3">
-              <v-expansion-panels variant="accordion" multiple>
-                <v-expansion-panel
-                  v-for="section in item.sections"
-                  :key="section.id"
-                  class="mb-1"
+            <template v-if="item.topics?.length">
+              <v-divider />
+              <div class="pa-3">
+                <div
+                  v-for="topic in item.topics"
+                  :key="topic.id"
+                  class="d-flex align-center ga-2 mb-1"
                 >
-                  <v-expansion-panel-title class="text-body-2 font-weight-bold" style="min-height:36px">
-                    <template #default="{ expanded }">
-                      <v-icon size="16" class="me-2 text-medium-emphasis">
-                        {{ expanded ? 'mdi-chevron-down' : 'mdi-chevron-right' }}
-                      </v-icon>
-                      {{ section.title }}
-                    </template>
-                  </v-expansion-panel-title>
-                  <v-expansion-panel-text class="py-0">
-                    <div
-                      v-for="lesson in section.lessons"
-                      :key="lesson.id"
-                      class="ml-4 mb-2"
-                    >
-                      <div class="d-flex align-center ga-2 mb-1">
-                        <v-icon size="14" color="primary">mdi-play-circle-outline</v-icon>
-                        <span class="text-body-2 font-weight-medium">{{ lesson.title }}</span>
-                        <v-chip
-                          v-if="lesson.status"
-                          size="x-small"
-                          :color="chipColor(lesson.status)"
-                          variant="tonal"
-                        >{{ statusLabel(lesson.status) }}</v-chip>
-                      </div>
-
-                      <div
-                        v-for="topic in lesson.topics"
-                        :key="topic.id"
-                        class="ml-6 mb-1 d-flex align-center ga-2"
-                      >
-                        <v-icon size="12" class="text-medium-emphasis">mdi-circle-small</v-icon>
-                        <span class="text-caption">{{ topic.title }}</span>
-                        <v-chip
-                          v-if="topic.status"
-                          size="x-small"
-                          :color="chipColor(topic.status)"
-                          variant="tonal"
-                        >{{ statusLabel(topic.status) }}</v-chip>
-
-                        <template v-if="topic.quiz">
-                          <v-chip
-                            size="x-small"
-                            :color="topic.quiz.type === 'quiz' ? 'warning' : 'info'"
-                            variant="tonal"
-                            :prepend-icon="topic.quiz.type === 'quiz' ? 'mdi-help-circle-outline' : 'mdi-file-document-edit-outline'"
-                            class="ml-1"
-                          >{{ topic.quiz.title }}</v-chip>
-                        </template>
-                      </div>
-                    </div>
-                  </v-expansion-panel-text>
-                </v-expansion-panel>
-              </v-expansion-panels>
-            </div>
+                  <v-icon size="12" class="text-medium-emphasis">mdi-circle-small</v-icon>
+                  <span class="text-caption">{{ topic.title }}</span>
+                  <v-chip
+                    v-if="topic.status"
+                    size="x-small"
+                    :color="chipColor(topic.status)"
+                    variant="tonal"
+                  >{{ statusLabel(topic.status) }}</v-chip>
+                </div>
+              </div>
+            </template>
           </v-card>
         </template>
 
@@ -196,20 +153,12 @@ const sortedPrograms = computed({
     if (filter.value === 'all') return list
     return list.filter(p => p.status === filter.value)
   },
-  set: (val) => {
-    // v-model setter required by draggable
-  },
+  set: () => {},
 })
 
 async function onReorderPrograms() {
   const ids = (apiPrograms.value ?? []).map(p => p.id)
   await reorderPrograms(ids)
-}
-
-function totalLessons(p: ProgramWithRelations) {
-  let count = 0
-  for (const s of p.sections) count += s.lessons.length
-  return count
 }
 
 function chipColor(s: string) {

@@ -7,7 +7,7 @@ export default defineEventHandler(async (event): Promise<ProgramTopic> => {
   const { data, error } = await supabase
     .from('program_topics')
     .insert({
-      lesson_id: body.lesson_id,
+      program_id: body.program_id,
       title: body.title,
       sort_order: body.sort_order ?? 0,
     })
@@ -15,5 +15,5 @@ export default defineEventHandler(async (event): Promise<ProgramTopic> => {
     .single()
 
   if (error) throw createError({ statusCode: 500, message: error.message })
-  return { ...data, quiz: null }
+  return data
 })

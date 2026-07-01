@@ -106,9 +106,18 @@ export interface Workshop {
   updated_at: string
 }
 
+export interface WorkshopProgramLink {
+  id: string
+  program_id: string
+  trainer_id: string | null
+  notes: string | null
+  program: Program | null
+}
+
 export interface WorkshopWithRelations extends Workshop {
   venue?: ConferenceRoom
   client?: Company
+  workshop_programs?: WorkshopProgramLink[]
 }
 
 export interface Program {
@@ -132,45 +141,14 @@ export interface WorkshopProgram {
   notes: string | null
 }
 
-export interface ProgramQuiz {
-  id: string
-  topic_id: string
-  title: string
-  type: 'quiz' | 'assignment'
-  status: 'upcoming' | 'ongoing' | 'completed'
-  sort_order: number
-  created_at: string
-}
-
 export interface ProgramTopic {
-  id: string
-  lesson_id: string
-  title: string
-  content: Record<string, any> | null
-  status: 'upcoming' | 'ongoing' | 'completed'
-  sort_order: number
-  created_at: string
-  quiz: ProgramQuiz | null
-}
-
-export interface ProgramLesson {
-  id: string
-  section_id: string
-  title: string
-  status: 'upcoming' | 'ongoing' | 'completed'
-  sort_order: number
-  created_at: string
-  topics: ProgramTopic[]
-}
-
-export interface ProgramSection {
   id: string
   program_id: string
   title: string
   content: Record<string, any> | null
+  status: 'upcoming' | 'ongoing' | 'completed'
   sort_order: number
   created_at: string
-  lessons: ProgramLesson[]
 }
 
 export interface ProgramWithRelations extends Program {
@@ -178,16 +156,7 @@ export interface ProgramWithRelations extends Program {
   workshop_date_start?: string
   workshop_date_end?: string
   trainer_name?: string
-  sections: ProgramSection[]
-}
-
-export interface Enrollment {
-  id: string
-  workshop_id: string
-  trainee_id: string
-  enrolled_by: 'self' | 'company'
-  payment_status: 'paid' | 'pending' | 'waived'
-  created_at: string
+  topics: ProgramTopic[]
 }
 
 export interface Attendance {

@@ -10,7 +10,7 @@
         v-if="tab === 'contacts'"
         color="primary"
         prepend-icon="mdi-plus"
-        @click="openContactDialog()"
+        to="/manage/contacts/new"
       >Add Contact</v-btn>
       <v-btn
         v-if="tab === 'companies'"
@@ -102,7 +102,7 @@
         </template>
         <template #item.actions="{ item }">
           <div class="d-flex ga-1">
-            <v-btn icon variant="text" size="small" color="primary" @click="openContactDialog(item.id)">
+            <v-btn icon variant="text" size="small" color="primary" :to="`/manage/contacts/new?company_id=${item.id}`">
               <v-icon size="18">mdi-account-plus</v-icon>
             </v-btn>
             <v-btn icon variant="text" size="small" @click="openCompanyDialog(item)">
@@ -119,7 +119,7 @@
               <div class="d-flex align-center mb-2">
                 <span class="text-body-2 font-weight-bold">Contacts</span>
                 <v-spacer />
-                <v-btn variant="outlined" size="x-small" prepend-icon="mdi-plus" @click="openContactDialog(item.id)">Add contact</v-btn>
+                <v-btn variant="outlined" size="x-small" prepend-icon="mdi-plus" :to="`/manage/contacts/new?company_id=${item.id}`">Add contact</v-btn>
               </div>
               <v-data-table
                 :headers="contactSubHeaders"

@@ -6,8 +6,12 @@
       </v-btn>
       <v-divider vertical class="align-self-stretch" />
       <h1 class="text-h4 font-weight-bold">{{ program?.title || 'Program' }}</h1>
+      <v-chip v-if="program?.deleted_at" size="small" color="grey" variant="tonal">Archived</v-chip>
       <v-spacer />
-      <v-btn color="error" variant="outlined" :loading="deleting" @click="confirmDelete">
+      <v-btn v-if="program?.deleted_at" color="success" variant="outlined" prepend-icon="mdi-restore" :loading="restoring" @click="onRestore">
+        Restore
+      </v-btn>
+      <v-btn v-else color="error" variant="outlined" :loading="deleting" @click="confirmDelete">
         Delete program
       </v-btn>
       <v-btn color="primary" :loading="saving" @click="saveProgram">
@@ -117,12 +121,12 @@
 
           <v-dialog v-model="deleteDialog" max-width="400">
             <v-card>
-              <v-card-title class="text-body-1 font-weight-bold">Delete program?</v-card-title>
-              <v-card-text>This will permanently delete the program and all its topics. This action cannot be undone.</v-card-text>
+              <v-card-title class="text-body-1 font-weight-bold">Archive program?</v-card-title>
+              <v-card-text>This will move the program to the archive. You can restore it later.</v-card-text>
               <v-card-actions>
                 <v-spacer />
                 <v-btn variant="text" @click="deleteDialog = false">Cancel</v-btn>
-                <v-btn color="error" :loading="deleting" @click="doDelete">Delete</v-btn>
+                <v-btn color="error" :loading="deleting" @click="doDelete">Archive</v-btn>
               </v-card-actions>
             </v-card>
           </v-dialog>
@@ -148,7 +152,7 @@ const id = route.params.id as string
 
 const {
   programs, pending, refresh,
-  updateProgram, deleteProgram,
+  updateProgram, deleteProgram, restoreProgram,
   createTopic: apiCreateTopic, updateTopic: apiUpdateTopic, deleteTopic: apiDeleteTopic,
   reorderTopics,
 } = useAdminPrograms()
@@ -164,6 +168,7 @@ const editTitle = ref('')
 const editDescription = ref('')
 const saving = ref(false)
 const deleting = ref(false)
+const restoring = ref(false)
 const deleteDialog = ref(false)
 const formRef = ref<VForm>()
 const required = [(v: any) => !!v || 'Required']
@@ -223,6 +228,18 @@ async function doDelete() {
   } finally {
     deleting.value = false
     deleteDialog.value = false
+  }
+}
+
+async function onRestore() {
+  restoring.value = true
+  try {
+    await restoreProgram(id)
+    snackbar.value = { show: true, text: 'Program restored', color: 'success' }
+  } catch (err: any) {
+    snackbar.value = { show: true, text: err.message || err.toString(), color: 'error' }
+  } finally {
+    restoring.value = false
   }
 }
 

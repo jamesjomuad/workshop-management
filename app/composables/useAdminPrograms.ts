@@ -19,6 +19,11 @@ export function useAdminPrograms() {
     await refresh()
   }
 
+  async function restoreProgram(id: string) {
+    await $fetch(`/api/admin/programs/${id}`, { method: 'PUT', body: { deleted_at: null } })
+    await refresh()
+  }
+
   async function reorderPrograms(ids: string[]) {
     await $fetch('/api/admin/programs/reorder', { method: 'POST', body: { ids } })
     await refresh()
@@ -47,7 +52,7 @@ export function useAdminPrograms() {
 
   return {
     programs, pending, error, refresh,
-    createProgram, updateProgram, deleteProgram, reorderPrograms,
+    createProgram, updateProgram, deleteProgram, restoreProgram, reorderPrograms,
     createTopic, updateTopic, deleteTopic, reorderTopics,
   }
 }

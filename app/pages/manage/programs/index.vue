@@ -21,6 +21,7 @@
       <v-chip filter variant="tonal" value="ongoing">Ongoing</v-chip>
       <v-chip filter variant="tonal" value="upcoming">Upcoming</v-chip>
       <v-chip filter variant="tonal" value="completed">Completed</v-chip>
+      <v-chip filter variant="tonal" value="archived">Archived</v-chip>
     </v-chip-group>
 
     <div class="d-flex flex-column ga-3">
@@ -65,8 +66,24 @@
               <template #append>
                 <div class="d-flex flex-column ga-2 align-end">
                   <v-btn variant="text" color="primary" size="small" :to="`/manage/programs/${item.id}`">View</v-btn>
-                  <v-btn icon variant="text" size="small" color="medium-emphasis">
-                    <v-icon>mdi-monitor-dashboard</v-icon>
+                  <v-btn
+                    v-if="item.deleted_at"
+                    variant="text"
+                    color="success"
+                    size="small"
+                    prepend-icon="mdi-restore"
+                    @click="onRestore(item)"
+                  >Restore</v-btn>
+                  <v-btn
+                    v-else
+                    icon
+                    variant="text"
+                    size="small"
+                    color="error"
+                    @click="confirmDelete(item)"
+                  >
+                    <v-icon>mdi-delete-outline</v-icon>
+                    <v-tooltip activator="parent" location="top">Delete</v-tooltip>
                   </v-btn>
                 </div>
               </template>
@@ -102,6 +119,9 @@
                 </template>
                 {{ statusLabel(item.status) }}
               </v-chip>
+              <v-chip v-if="item.deleted_at" size="x-small" color="grey" variant="tonal">
+                Archived
+              </v-chip>
             </div>
 
             <template v-if="item.topics?.length">
@@ -135,6 +155,18 @@
         </template>
       </draggable>
     </div>
+
+    <v-dialog v-model="deleteDialog" max-width="400">
+      <v-card rounded="lg">
+        <v-card-title class="text-h6 font-weight-bold">Delete Program</v-card-title>
+        <v-card-text>Are you sure you want to delete <strong>{{ deleteTarget?.title }}</strong>? It will be moved to the archive.</v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="deleteDialog = false">Cancel</v-btn>
+          <v-btn color="error" variant="flat" :loading="deleting" @click="onDelete">Delete</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -144,12 +176,30 @@ import draggable from 'vuedraggable'
 
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
-const { programs: apiPrograms, pending, reorderPrograms } = useAdminPrograms()
+const { programs: apiPrograms, pending, reorderPrograms, deleteProgram, restoreProgram } = useAdminPrograms()
 const filter = ref('all')
+const deleteDialog = ref(false)
+const deleteTarget = ref<ProgramWithRelations | null>(null)
+const deleting = ref(false)
+
+const activePrograms = ref<ProgramWithRelations[]>([])
+const archivedPrograms = ref<ProgramWithRelations[]>([])
+
+watch(apiPrograms, (list) => {
+  activePrograms.value = list ?? []
+}, { immediate: true })
+
+watchEffect(async () => {
+  if (filter.value === 'archived') {
+    const data = await $fetch<ProgramWithRelations[]>('/api/admin/programs', { query: { archived: 'true' } })
+    archivedPrograms.value = data.filter(p => p.deleted_at)
+  }
+})
 
 const sortedPrograms = computed({
   get: () => {
-    const list = apiPrograms.value ?? []
+    if (filter.value === 'archived') return archivedPrograms.value
+    const list = activePrograms.value
     if (filter.value === 'all') return list
     return list.filter(p => p.status === filter.value)
   },
@@ -159,6 +209,24 @@ const sortedPrograms = computed({
 async function onReorderPrograms() {
   const ids = (apiPrograms.value ?? []).map(p => p.id)
   await reorderPrograms(ids)
+}
+
+function confirmDelete(item: ProgramWithRelations) {
+  deleteTarget.value = item
+  deleteDialog.value = true
+}
+
+async function onDelete() {
+  if (!deleteTarget.value) return
+  deleting.value = true
+  await deleteProgram(deleteTarget.value.id)
+  deleting.value = false
+  deleteDialog.value = false
+  deleteTarget.value = null
+}
+
+async function onRestore(item: ProgramWithRelations) {
+  await restoreProgram(item.id)
 }
 
 function chipColor(s: string) {

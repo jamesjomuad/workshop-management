@@ -1,13 +1,14 @@
 import type { ProgramWithRelations } from '~/types'
 
-export default defineEventHandler(async (): Promise<ProgramWithRelations[]> => {
+export default defineEventHandler(async (event): Promise<ProgramWithRelations[]> => {
   const supabase = useAdminClient()
+  const query = getQuery(event)
+  const includeArchived = query.archived === 'true'
 
-  const { data: programs, error } = await supabase
-    .from('programs')
-    .select('*')
-    .order('order_index')
-    .order('created_at', { ascending: false })
+  let builder = supabase.from('programs').select('*').order('order_index').order('created_at', { ascending: false })
+  if (!includeArchived) builder = builder.is('deleted_at', null)
+
+  const { data: programs, error } = await builder
 
   if (error) throw createError({ statusCode: 500, message: error.message })
   if (!programs?.length) return []

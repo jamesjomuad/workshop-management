@@ -5,7 +5,7 @@
     </div>
 
     <v-row class="mb-4">
-      <v-col v-for="stat in statCards" :key="stat.label" cols="12" sm="6" md="3">
+      <v-col v-for="stat in statCards" :key="stat.label" cols="12" sm="6" md="4">
         <v-card rounded="lg" variant="outlined" class="pa-4">
           <v-icon :color="stat.color" class="mb-2" size="36">{{ stat.icon }}</v-icon>
           <div class="text-caption text-medium-emphasis mb-1">{{ stat.label }}</div>
@@ -76,44 +76,7 @@
       </v-col>
     </v-row>
 
-    <v-card rounded="lg" variant="outlined">
-      <v-card-item>
-        <v-card-title class="text-h6">Recent Enrollments</v-card-title>
-        <v-card-subtitle>Last 7 days</v-card-subtitle>
-        <template #append>
-          <v-btn variant="text" color="primary" size="small" to="/manage/enrollments">View all</v-btn>
-        </template>
-      </v-card-item>
-      <v-table density="compact">
-        <thead>
-          <tr>
-            <th class="text-uppercase text-caption font-weight-bold">Trainee</th>
-            <th class="text-uppercase text-caption font-weight-bold">Workshop</th>
-            <th class="text-uppercase text-caption font-weight-bold">Company</th>
-            <th class="text-uppercase text-caption font-weight-bold">Enrolled</th>
-            <th class="text-uppercase text-caption font-weight-bold">Type</th>
-            <th class="text-uppercase text-caption font-weight-bold">Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="e in recentEnrollments" :key="e.name">
-            <td class="font-weight-medium">{{ e.name }}</td>
-            <td>{{ e.workshop }}</td>
-            <td>{{ e.company }}</td>
-            <td class="font-family-mono text-caption">{{ e.date }}</td>
-            <td>
-              <v-chip size="x-small" :color="e.typeColor" variant="tonal">{{ e.type }}</v-chip>
-            </td>
-            <td>
-              <v-chip size="x-small" :color="e.statusColor" variant="tonal">
-                <template #prepend v-if="e.statusDot"><v-icon size="8" :color="e.statusColor">mdi-circle</v-icon></template>
-                {{ e.status }}
-              </v-chip>
-            </td>
-          </tr>
-        </tbody>
-      </v-table>
-    </v-card>
+
   </div>
 </template>
 
@@ -125,7 +88,6 @@ const currentDate = today.toLocaleDateString('en-US', { weekday: 'long', year: '
 
 const statCards = [
   { label: 'Active Workshops', value: '3', icon: 'mdi-notebook', color: 'primary', delta: '2 this month', deltaClass: 'text-success text-caption' },
-  { label: 'Total Enrollments', value: '127', icon: 'mdi-account-group', color: 'success', delta: '18 this week', deltaClass: 'text-success text-caption' },
   { label: 'Rooms in Use', value: '2 / 5', icon: 'mdi-door-open', color: 'warning', delta: '3 available today', deltaClass: 'text-medium-emphasis text-caption' },
   { label: 'Avg. Attendance', value: '87%', icon: 'mdi-check-circle', color: 'purple', delta: '4% vs last month', deltaClass: 'text-success text-caption' },
 ]
@@ -145,12 +107,7 @@ const attendanceRates = [
   { label: 'Digital Literacy', pct: 61, color: 'warning' },
 ]
 
-const recentEnrollments = [
-  { name: 'Ana Mercado', workshop: 'PM Workshop — Batch 4', company: 'Pacific Corp', date: 'Jun 23', type: 'Company', typeColor: 'primary', status: 'Confirmed', statusColor: 'success', statusDot: true },
-  { name: 'Ben Ramos', workshop: 'Safety Training — June', company: 'IndyCo Ltd.', date: 'Jun 22', type: 'Company', typeColor: 'primary', status: 'Confirmed', statusColor: 'success', statusDot: true },
-  { name: 'Carla Tan', workshop: 'Leadership Series', company: '—', date: 'Jun 22', type: 'Self', typeColor: 'purple', status: 'Pending payment', statusColor: 'warning', statusDot: false },
-  { name: 'Diego Lim', workshop: 'PM Workshop — Batch 4', company: 'Pacific Corp', date: 'Jun 21', type: 'Company', typeColor: 'primary', status: 'Confirmed', statusColor: 'success', statusDot: true },
-]
+
 </script>
 
 <style scoped>

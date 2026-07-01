@@ -58,7 +58,6 @@ const pageTitle = computed(() => {
     '/manage/venues': 'Venues',
     '/manage/workshops': 'Workshops',
     '/manage/programs': 'Programs & Sessions',
-    '/manage/enrollments': 'Enrollments & Attendance',
     '/manage/contacts': 'Contacts',
   }
   return map[route.path] || 'Admin'

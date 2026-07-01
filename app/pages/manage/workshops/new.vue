@@ -136,7 +136,7 @@
                       {{ i + 1 }}
                     </v-avatar>
                     <div class="flex-grow-1">
-                      <div class="text-body-2 font-weight-medium">{{ prog.name || 'New program' }}</div>
+                      <div class="text-body-2 font-weight-medium">{{ programTitle(prog.program_id) || 'Select a program' }}</div>
                       <div class="text-caption text-medium-emphasis">{{ users?.find(u => u.id === prog.trainer_id)?.name || 'No trainer assigned' }}</div>
                     </div>
                     <v-btn icon variant="text" size="x-small" color="medium-emphasis" @click.stop="removeProgram(prog._key)">
@@ -146,9 +146,11 @@
                   <v-expand-transition>
                     <div v-show="prog._open" class="border-t pa-3 d-flex flex-column ga-3">
                       <v-select
-                        v-model="prog.name"
-                        name="program_name"
-                        :items="PROGRAM_OPTIONS"
+                        v-model="prog.program_id"
+                        name="program_id"
+                        :items="programOptions"
+                        item-title="title"
+                        item-value="value"
                         label="Program"
                         variant="outlined"
                         density="comfortable"
@@ -510,6 +512,7 @@ definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 const router = useRouter()
 const { venues, companies, createWorkshop } = useAdminWorkshops()
 const { users } = useUsers()
+const { programs: allPrograms } = useAdminPrograms()
 
 const form = reactive({
   title: '',
@@ -543,7 +546,7 @@ const STATUS_OPTIONS = [
   { value: 'published', label: 'Published', sub: 'Open for enrollment', dot: '#2563EB' },
   { value: 'upcoming', label: 'Upcoming', sub: 'Confirmed, enrollment closed', dot: '#D97706' },
 ]
-const PROGRAM_OPTIONS = ['PM Fundamentals', 'Safety & Compliance', 'Leadership Essentials', 'HR Fundamentals', 'Digital Literacy', 'Risk Management', 'Custom (new program)']
+const programOptions = computed(() => (allPrograms.value ?? []).map(p => ({ title: p.title, value: p.id })))
 const userOptions = computed(() => (users.value ?? []).map(u => ({ title: u.name, value: u.id, role: u.role })))
 const SCHEDULE_OPTIONS = ['Morning (08:00–12:00)', 'Afternoon (13:00–17:00)', 'Full day (08:00–17:00)', 'Custom']
 const DAY_OPTIONS = ['Day 1', 'Day 2', 'Day 3']
@@ -552,7 +555,7 @@ let progKey = 0
 interface ProgramItem {
   _key: number
   _open: boolean
-  name: string
+  program_id: string | null
   trainer_id: string | null
   schedule: string
   start_day: string
@@ -561,7 +564,7 @@ const programs = ref<ProgramItem[]>([])
 
 function addProgram() {
   progKey++
-  programs.value.push({ _key: progKey, _open: true, name: '', trainer_id: null, schedule: 'Morning (08:00–12:00)', start_day: 'Day 1' })
+  programs.value.push({ _key: progKey, _open: true, program_id: null, trainer_id: null, schedule: 'Morning (08:00–12:00)', start_day: 'Day 1' })
 }
 
 function removeProgram(key: number) {
@@ -606,10 +609,15 @@ const summary = computed(() => {
     : null
 
   const cap = `${form.max_capacity} participants`
-  const progSummary = programs.value.map(p => ({ key: p._key, name: p.name, trainer: users.value?.find(u => u.id === p.trainer_id)?.name || '—' }))
+  const progSummary = programs.value.map(p => ({ key: p._key, name: programTitle(p.program_id) || 'Select a program', trainer: users.value?.find(u => u.id === p.trainer_id)?.name || '—' }))
 
   return { title, dates, duration, room, trainer, facilitator, client, capacity: cap, programs: progSummary }
 })
+
+function programTitle(id: string | null) {
+  if (!id) return ''
+  return allPrograms.value?.find(p => p.id === id)?.title ?? ''
+}
 
 function fmt(d: string) {
   if (!d) return ''
@@ -629,6 +637,10 @@ async function save(publishStatus: string) {
       return
     }
 
+    const programLinks = programs.value
+      .filter(p => p.program_id)
+      .map(p => ({ program_id: p.program_id!, trainer_id: p.trainer_id }))
+
     await createWorkshop({
       title: form.title,
       description: form.description || null,
@@ -638,6 +650,7 @@ async function save(publishStatus: string) {
       client_id: form.client_id,
       facilitator_id: form.facilitator_id,
       status: status.value as any,
+      programs: programLinks,
     })
     snackbar.value = { show: true, text: status.value === 'published' ? 'Workshop published!' : 'Workshop saved as draft.', color: 'success' }
     setTimeout(() => router.push('/manage/workshops'), 1200)

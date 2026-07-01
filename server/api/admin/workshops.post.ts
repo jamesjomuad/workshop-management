@@ -20,5 +20,18 @@ export default defineEventHandler(async (event): Promise<Workshop> => {
     .single()
 
   if (error) throw createError({ statusCode: 500, message: error.message })
+
+  if (body.programs?.length) {
+    const { error: wpError } = await supabase
+      .from('workshop_programs')
+      .insert(body.programs.map((p: any) => ({
+        workshop_id: data.id,
+        program_id: p.program_id,
+        trainer_id: p.trainer_id || null,
+      })))
+
+    if (wpError) throw createError({ statusCode: 500, message: wpError.message })
+  }
+
   return data
 })

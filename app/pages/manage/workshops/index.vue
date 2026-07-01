@@ -87,7 +87,7 @@
             </template>
             {{ statusLabel(item.status) }}
           </v-chip>
-          <v-chip size="x-small" color="primary" variant="tonal">1 Program · 8 Sessions</v-chip>
+          <v-chip size="x-small" color="primary" variant="tonal">{{ (item.workshop_programs?.length ?? 0) }} Program{{ (item.workshop_programs?.length ?? 0) !== 1 ? 's' : '' }}</v-chip>
         </div>
       </v-card>
 

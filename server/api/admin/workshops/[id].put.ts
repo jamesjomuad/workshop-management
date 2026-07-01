@@ -22,5 +22,27 @@ export default defineEventHandler(async (event): Promise<Workshop> => {
     .single()
 
   if (error) throw createError({ statusCode: 500, message: error.message })
+
+  if (body.programs) {
+    const { error: delError } = await supabase
+      .from('workshop_programs')
+      .delete()
+      .eq('workshop_id', id)
+
+    if (delError) throw createError({ statusCode: 500, message: delError.message })
+
+    if (body.programs.length) {
+      const { error: insError } = await supabase
+        .from('workshop_programs')
+        .insert(body.programs.map((p: any) => ({
+          workshop_id: id,
+          program_id: p.program_id,
+          trainer_id: p.trainer_id || null,
+        })))
+
+      if (insError) throw createError({ statusCode: 500, message: insError.message })
+    }
+  }
+
   return data
 })

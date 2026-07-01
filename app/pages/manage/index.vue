@@ -16,100 +16,166 @@
     </v-row>
 
     <v-row class="mb-4">
-      <v-col cols="12" md="6">
+      <v-col cols="12" md="7">
         <v-card rounded="lg" variant="outlined">
           <v-card-item>
-            <v-card-title class="text-h6">Today's Sessions</v-card-title>
-            <v-card-subtitle>{{ currentDate }}</v-card-subtitle>
+            <v-card-title class="text-h6">Schedule</v-card-title>
+            <v-card-subtitle>{{ headerTitle }}</v-card-subtitle>
             <template #append>
-              <v-chip size="small" color="success" variant="tonal" class="mt-2">
-                <template #prepend><v-icon size="10" color="success">mdi-circle</v-icon></template>
-                2 ongoing
-              </v-chip>
+              <v-btn variant="text" size="small" color="primary" to="/manage/calendar">View full calendar</v-btn>
             </template>
           </v-card-item>
           <v-divider />
-          <v-list lines="two" density="compact">
-            <v-list-item
-              v-for="session in todaySessions"
-              :key="session.title"
-              :title="session.title"
-              :subtitle="session.subtitle"
-            >
-              <template #prepend>
-                <div class="text-caption font-weight-mono text-medium-emphasis me-2" style="min-width:44px">{{ session.time }}</div>
-                <v-icon :color="session.color" size="8" class="me-3">mdi-circle</v-icon>
-              </template>
-              <template #append>
-                <v-chip size="x-small" :color="session.chipColor" variant="tonal">{{ session.status }}</v-chip>
-              </template>
-            </v-list-item>
-          </v-list>
+          <v-calendar
+            ref="miniCal"
+            v-model="today"
+            type="month"
+            :events="events"
+            :event-color="getEventColor"
+            :weekdays="[0, 1, 2, 3, 4, 5, 6]"
+            height="340"
+            @click:event="onEventClick"
+          />
         </v-card>
       </v-col>
 
-      <v-col cols="12" md="6">
+      <v-col cols="12" md="5">
         <v-card rounded="lg" variant="outlined">
           <v-card-item>
-            <v-card-title class="text-h6">Attendance Rate</v-card-title>
-            <v-card-subtitle>Active workshops this month</v-card-subtitle>
+            <v-card-title class="text-h6">Upcoming Workshops</v-card-title>
           </v-card-item>
           <v-divider />
-          <v-list density="compact">
-            <v-list-item v-for="att in attendanceRates" :key="att.label">
-              <template #default>
-                <div class="d-flex align-center ga-2 py-1">
-                  <div class="text-body-2 text-medium-emphasis" style="min-width:120px">{{ att.label }}</div>
-                  <v-progress-linear
-                    :model-value="att.pct"
-                    :color="att.color"
-                    height="8"
-                    rounded
-                    class="flex-grow-1"
-                  />
-                  <div class="text-caption font-weight-mono text-medium-emphasis" style="min-width:34px;text-align:right">{{ att.pct }}%</div>
-                </div>
+          <v-list v-if="upcomingWorkshops.length" lines="two" density="compact">
+            <v-list-item
+              v-for="w in upcomingWorkshops"
+              :key="w.id"
+              :to="`/manage/workshops/${w.id}`"
+            >
+              <template #prepend>
+                <v-avatar size="36" :color="statusColor[w.status]" variant="tonal" class="me-3">
+                  <v-icon size="18">mdi-calendar-text</v-icon>
+                </v-avatar>
+              </template>
+              <v-list-item-title class="font-weight-medium">{{ w.title }}</v-list-item-title>
+              <v-list-item-subtitle>
+                {{ formatShortDate(w.date_start) }} · {{ w.venue?.name || 'No venue' }}
+              </v-list-item-subtitle>
+              <template #append>
+                <v-chip size="x-small" :color="statusColor[w.status]" variant="tonal">{{ w.status }}</v-chip>
               </template>
             </v-list-item>
           </v-list>
+          <v-card-text v-else class="text-center text-medium-emphasis">
+            No upcoming workshops
+          </v-card-text>
         </v-card>
       </v-col>
     </v-row>
-
-
   </div>
 </template>
 
 <script setup lang="ts">
+import type { WorkshopWithRelations } from '~/types'
+
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
-const today = new Date()
-const currentDate = today.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+const { workshops } = useAdminWorkshops()
 
-const statCards = [
-  { label: 'Active Workshops', value: '3', icon: 'mdi-notebook', color: 'primary', delta: '2 this month', deltaClass: 'text-success text-caption' },
-  { label: 'Rooms in Use', value: '2 / 5', icon: 'mdi-door-open', color: 'warning', delta: '3 available today', deltaClass: 'text-medium-emphasis text-caption' },
-  { label: 'Avg. Attendance', value: '87%', icon: 'mdi-check-circle', color: 'purple', delta: '4% vs last month', deltaClass: 'text-success text-caption' },
-]
+const today = ref(new Date())
+const miniCal = ref()
 
-const todaySessions = [
-  { time: '08:00', title: 'Module 1 — Project Planning', subtitle: 'Ballroom B · Maria Santos · 24 participants', color: 'success', chipColor: 'success', status: 'Ongoing' },
-  { time: '09:30', title: 'Safety Fundamentals — Day 2', subtitle: 'Function Room 1 · Rico Cruz · 18 participants', color: 'success', chipColor: 'success', status: 'Ongoing' },
-  { time: '13:00', title: 'Leadership Essentials', subtitle: 'Boardroom A · Ana Reyes · 12 participants', color: 'warning', chipColor: 'warning', status: 'Starting soon' },
-  { time: '14:00', title: 'Module 2 — Risk Management', subtitle: 'Ballroom B · Maria Santos · 24 participants', color: 'grey', chipColor: 'default', status: 'Upcoming' },
-]
+const currentDate = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
 
-const attendanceRates = [
-  { label: 'PM Workshop', pct: 92, color: 'success' },
-  { label: 'Safety Training', pct: 85, color: 'primary' },
-  { label: 'Leadership Series', pct: 78, color: 'secondary' },
-  { label: 'HR Fundamentals', pct: 95, color: 'success' },
-  { label: 'Digital Literacy', pct: 61, color: 'warning' },
-]
+const statusColor: Record<string, string> = {
+  ongoing: 'success',
+  published: 'primary',
+  upcoming: 'primary',
+  draft: 'grey-lighten-1',
+  completed: 'grey',
+  cancelled: 'error',
+}
 
+const activeWorkshops = computed(() => {
+  if (!workshops.value) return []
+  return workshops.value.filter(w => ['ongoing', 'published'].includes(w.status))
+})
 
+const upcomingWorkshops = computed(() => {
+  if (!workshops.value) return []
+  const now = new Date()
+  return workshops.value
+    .filter(w => w.status === 'published' || (w.status === 'draft' && new Date(w.date_start) > now))
+    .sort((a, b) => new Date(a.date_start).getTime() - new Date(b.date_start).getTime())
+    .slice(0, 5)
+})
+
+const statCards = computed(() => [
+  {
+    label: 'Active Workshops',
+    value: String(activeWorkshops.value.length),
+    icon: 'mdi-notebook',
+    color: 'primary',
+    delta: `${workshops.value?.length ?? 0} total`,
+    deltaClass: 'text-medium-emphasis text-caption',
+  },
+  {
+    label: 'Total Workshops',
+    value: String(workshops.value?.length ?? 0),
+    icon: 'mdi-calendar-multiple',
+    color: 'secondary',
+    delta: `${upcomingWorkshops.value.length} upcoming`,
+    deltaClass: 'text-medium-emphasis text-caption',
+  },
+  {
+    label: 'Status',
+    value: activeWorkshops.value.length ? 'Active' : 'Idle',
+    icon: 'mdi-check-circle',
+    color: activeWorkshops.value.length ? 'success' : 'grey',
+    delta: activeWorkshops.value.length ? 'Workshops running' : 'No active workshops',
+    deltaClass: activeWorkshops.value.length ? 'text-success text-caption' : 'text-medium-emphasis text-caption',
+  },
+])
+
+interface CalEvent {
+  name: string
+  start: Date
+  end: Date
+  color: string
+  timed: boolean
+  workshop: WorkshopWithRelations
+}
+
+const events = computed<CalEvent[]>(() => {
+  if (!workshops.value) return []
+  return workshops.value.map(w => {
+    const start = new Date(w.date_start)
+    const end = new Date(w.date_end)
+    end.setDate(end.getDate() + 1)
+    return {
+      name: w.title,
+      start,
+      end,
+      color: statusColor[w.status] || 'grey',
+      timed: false,
+      workshop: w,
+    }
+  })
+})
+
+function getEventColor(event: CalEvent) {
+  return event.color
+}
+
+function onEventClick(info: any) {
+  const workshop = info.event?.workshop
+  if (workshop) navigateTo(`/manage/workshops/${workshop.id}`)
+}
+
+function formatShortDate(date: string) {
+  return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
+
+const headerTitle = computed(() => {
+  return today.value.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+})
 </script>
-
-<style scoped>
-.font-family-mono { font-family: 'DM Mono', 'SF Mono', 'Cascadia Code', monospace; }
-</style>

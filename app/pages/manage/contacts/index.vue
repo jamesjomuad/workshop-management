@@ -61,7 +61,7 @@
         </template>
         <template #item.actions="{ item }">
           <div class="d-flex ga-1">
-            <v-btn icon variant="text" size="small" @click="openContactDialog(item)">
+            <v-btn icon variant="text" size="small" :to="`/manage/contacts/${item.id}`">
               <v-icon size="18">mdi-pencil</v-icon>
             </v-btn>
             <v-btn icon variant="text" size="small" color="error" @click="confirmDeleteContact(item)">
@@ -133,7 +133,7 @@
                 </template>
                 <template #item.actions="{ item: c }">
                   <div class="d-flex ga-1">
-                    <v-btn icon variant="text" size="x-small" @click="openContactDialog(item.id, c)">
+                    <v-btn icon variant="text" size="x-small" :to="`/manage/contacts/${c.id}`">
                       <v-icon size="16">mdi-pencil</v-icon>
                     </v-btn>
                     <v-btn icon variant="text" size="x-small" color="error" @click="confirmDeleteContact(c)">
@@ -147,44 +147,6 @@
         </template>
       </v-data-table>
     </v-card>
-
-    <v-dialog v-model="contactDialog" max-width="500">
-      <v-card rounded="lg">
-        <v-card-title class="text-body-1 font-weight-bold">{{ editingContact ? 'Edit Contact' : 'Add Contact' }}</v-card-title>
-        <v-divider />
-        <v-card-text class="d-flex flex-column ga-3 pt-4">
-          <v-autocomplete
-            v-model="contactForm.company_id"
-            :items="companies ?? []"
-            item-title="name"
-            item-value="id"
-            label="Company"
-            variant="outlined"
-            density="comfortable"
-            hide-details
-            clearable
-          />
-          <v-row>
-            <v-col cols="6">
-              <v-text-field v-model="contactForm.first_name" label="First name *" name="first_name" variant="outlined" density="comfortable" hide-details="auto" :rules="[(v: any) => !!v || 'Required']" />
-            </v-col>
-            <v-col cols="6">
-              <v-text-field v-model="contactForm.last_name" label="Last name *" name="last_name" variant="outlined" density="comfortable" hide-details="auto" :rules="[(v: any) => !!v || 'Required']" />
-            </v-col>
-          </v-row>
-          <v-text-field v-model="contactForm.email" label="Email" name="email" type="email" variant="outlined" density="comfortable" hide-details />
-          <v-text-field v-model="contactForm.phone" label="Phone" name="phone" variant="outlined" density="comfortable" hide-details />
-          <v-text-field v-model="contactForm.position" label="Position / Job title" name="position" variant="outlined" density="comfortable" hide-details />
-          <v-textarea v-model="contactForm.notes" label="Notes" name="notes" variant="outlined" density="comfortable" rows="2" hide-details />
-        </v-card-text>
-        <v-divider />
-        <v-card-actions class="pa-4">
-          <v-spacer />
-          <v-btn variant="outlined" @click="contactDialog = false">Cancel</v-btn>
-          <v-btn color="primary" :loading="saving" @click="saveContact">{{ editingContact ? 'Save' : 'Add' }}</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
 
     <v-dialog v-model="companyDialog" max-width="700">
       <v-card rounded="lg">
@@ -247,7 +209,7 @@ definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 import type { Company, Contact } from '~/types'
 
 const { companies, pending: coPending, refresh: refreshCompanies, createCompany, updateCompany, deleteCompany } = useCompanies()
-const { contacts, pending: ctPending, refresh: refreshContacts, createContact, updateContact, deleteContact } = useContacts()
+const { contacts, pending: ctPending, refresh: refreshContacts, deleteContact } = useContacts()
 
 const loading = computed(() => coPending.value || ctPending.value)
 const tab = ref('contacts')
@@ -306,10 +268,8 @@ function companyContacts(companyId: string) {
   return contacts.value?.filter(c => c.company_id === companyId) ?? []
 }
 
-const contactDialog = ref(false)
 const companyDialog = ref(false)
 const deleteDialog = ref(false)
-const editingContact = ref<Contact | null>(null)
 const editingCompany = ref<Company | null>(null)
 const deletingItem = ref<Company | Contact | null>(null)
 const deleteMessage = ref('')
@@ -336,60 +296,6 @@ const companyForm = reactive({
 
 const statusOptions = ['active', 'inactive', 'suspended']
 const sizeOptions = ['1-10', '11-50', '51-200', '200+']
-const contactForm = reactive({ company_id: '', first_name: '', last_name: '', email: '', phone: '', position: '', notes: '' })
-
-function openContactDialog(companyIdOrItem?: string | Contact, item?: Contact) {
-  const existing = item ?? (typeof companyIdOrItem === 'object' ? companyIdOrItem : undefined)
-  const coId = existing ? existing.company_id : (typeof companyIdOrItem === 'string' ? companyIdOrItem : '')
-  if (existing) {
-    editingContact.value = existing
-    contactForm.company_id = existing.company_id ?? ''
-    contactForm.first_name = existing.first_name
-    contactForm.last_name = existing.last_name
-    contactForm.email = existing.email ?? ''
-    contactForm.phone = existing.phone ?? ''
-    contactForm.position = existing.position ?? ''
-    contactForm.notes = existing.notes ?? ''
-  } else {
-    editingContact.value = null
-    contactForm.company_id = coId
-    contactForm.first_name = ''
-    contactForm.last_name = ''
-    contactForm.email = ''
-    contactForm.phone = ''
-    contactForm.position = ''
-    contactForm.notes = ''
-  }
-  contactDialog.value = true
-}
-
-async function saveContact() {
-  if (!contactForm.first_name || !contactForm.last_name) return
-  saving.value = true
-  try {
-    const payload = {
-      company_id: contactForm.company_id || null,
-      first_name: contactForm.first_name,
-      last_name: contactForm.last_name,
-      email: contactForm.email || null,
-      phone: contactForm.phone || null,
-      position: contactForm.position || null,
-      notes: contactForm.notes || null,
-    }
-    if (editingContact.value) {
-      await updateContact(editingContact.value.id, payload)
-      snackbar.value = { show: true, text: 'Contact updated', color: 'success' }
-    } else {
-      await createContact(payload)
-      snackbar.value = { show: true, text: 'Contact added', color: 'success' }
-    }
-    contactDialog.value = false
-  } catch (err: any) {
-    snackbar.value = { show: true, text: err.message, color: 'error' }
-  } finally {
-    saving.value = false
-  }
-}
 
 function openCompanyDialog(item?: Company) {
   if (item) {

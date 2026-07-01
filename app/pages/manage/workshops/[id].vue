@@ -700,7 +700,7 @@ function stepCapacity(delta: number) {
 }
 
 function addRange() {
-  form.dateRanges.push({ start: '', end: '' })
+  form.schedules.push({ date_start: '', date_end: '', time_start: '08:00', time_end: '17:00' })
 }
 
 function addSchedule() {
@@ -753,14 +753,14 @@ watch(() => JSON.stringify(form.schedules), () => checkConflicts())
 const summary = computed(() => {
   const title = form.title
 
-  const filled = form.dateRanges.filter(r => r.start && r.end)
-  const dates = filled.length > 0 ? filled.map(r => `${fmt(r.start)} – ${fmt(r.end)}`).join(', ') : null
+  const filled = form.schedules.filter(r => r.date_start && r.date_end)
+  const dates = filled.length > 0 ? filled.map(r => `${fmt(r.date_start)} – ${fmt(r.date_end)}`).join(', ') : null
 
   let duration = '—'
   if (filled.length > 0) {
     const totalDays = filled.reduce((sum, r) => {
-      const s = new Date(r.start)
-      const e = new Date(r.end)
+      const s = new Date(r.date_start)
+      const e = new Date(r.date_end)
       if (e < s) return sum
       return sum + Math.round((e.getTime() - s.getTime()) / 86400000) + 1
     }, 0)

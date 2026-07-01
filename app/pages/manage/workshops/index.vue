@@ -105,88 +105,58 @@
 
     <!-- CALENDAR VIEW -->
     <div v-else class="d-flex flex-column flex-grow-1">
-      <v-card rounded="lg" variant="outlined" class="d-flex flex-column flex-grow-1">
-        <v-sheet class="d-flex align-center pa-2">
-          <v-btn icon variant="text" size="small" @click="calendar?.prev()">
-            <v-icon>mdi-chevron-left</v-icon>
-          </v-btn>
-          <v-btn variant="text" size="small" class="me-2" @click="goToday">Today</v-btn>
-          <v-btn icon variant="text" size="small" @click="calendar?.next()">
-            <v-icon>mdi-chevron-right</v-icon>
-          </v-btn>
-          <div class="text-h6 font-weight-medium ms-2">{{ headerTitle }}</div>
+      <v-card rounded="lg" variant="outlined" class="d-flex flex-column flex-grow-1 overflow-hidden">
+        <!-- Legend bar -->
+        <v-sheet class="d-flex align-center pa-2 px-3" density="compact">
+          <div class="d-flex align-center ga-3 text-caption">
+            <div v-for="(label, key) in legendItems" :key="key" class="d-flex align-center ga-1">
+              <div :style="{ width: '10px', height: '10px', borderRadius: '3px', backgroundColor: `rgb(var(--v-theme-${legendColors[key as string]}))` }" />
+              <span class="text-medium-emphasis">{{ label }}</span>
+            </div>
+          </div>
           <v-spacer />
-          <v-btn-toggle v-model="calType" density="comfortable" variant="outlined" divided mandatory>
-            <v-btn value="month" size="small">Month</v-btn>
-            <v-btn value="week" size="small">Week</v-btn>
-            <v-btn value="day" size="small">Day</v-btn>
-          </v-btn-toggle>
+          <v-menu :close-on-content-click="false">
+            <template #activator="{ props }">
+              <v-btn
+                v-bind="props"
+                variant="outlined"
+                size="small"
+                prepend-icon="mdi-calendar"
+              >
+                {{ calDateFormatted }}
+              </v-btn>
+            </template>
+            <v-date-picker
+              v-model="calDate"
+              color="primary"
+              show-adjacent-months
+              hide-header
+            />
+          </v-menu>
         </v-sheet>
         <v-divider />
-        <v-calendar
-          ref="calendar"
-          v-model="today"
-          :type="calType"
-          :events="calEvents"
-          :event-color="getEventColor"
-          event-overlap-mode="column"
-          :weekdays="[0, 1, 2, 3, 4, 5, 6]"
-          class="flex-grow-1"
-          @click:event="onEventClick"
-        >
-          <template #event="{ event }">
-            <div class="pa-1 text-truncate" style="cursor:pointer">
-              <div class="text-caption font-weight-bold text-truncate">{{ event.name }}</div>
-              <div v-if="calType !== 'month'" class="text-caption text-truncate" style="opacity:.8">
-                {{ formatEventTime(event) }}
-              </div>
+
+        <!-- FullCalendar -->
+        <ClientOnly>
+          <FullCalendar ref="calendarRef" :options="calendarOptions" />
+          <template #fallback>
+            <div class="pa-8 text-center text-medium-emphasis">
+              <v-progress-circular indeterminate color="primary" class="mb-3" />
+              <div>Loading calendar...</div>
             </div>
           </template>
-        </v-calendar>
+        </ClientOnly>
       </v-card>
     </div>
 
-    <v-dialog v-model="detailDialog" max-width="480">
-      <v-card v-if="selectedWorkshop" rounded="lg">
-        <v-card-item>
-          <v-card-title class="text-body-1 font-weight-bold">{{ selectedWorkshop.title }}</v-card-title>
-          <v-card-subtitle class="d-flex align-center ga-2 mt-1">
-            <v-chip size="x-small" :color="chipColor(selectedWorkshop.status)" variant="tonal">
-              {{ statusLabel(selectedWorkshop.status) }}
-            </v-chip>
-            <span>{{ formatDate(selectedWorkshop.date_start) }} – {{ formatDate(selectedWorkshop.date_end) }}</span>
-          </v-card-subtitle>
-        </v-card-item>
-        <v-divider />
-        <v-list density="compact" lines="two">
-          <v-list-item v-if="selectedWorkshop.conference_room" prepend-icon="mdi-door-open">
-            <v-list-item-title>{{ selectedWorkshop.conference_room.name }}</v-list-item-title>
-            <v-list-item-subtitle>{{ selectedWorkshop.conference_room.venue_name }}</v-list-item-subtitle>
-          </v-list-item>
-          <v-list-item v-if="selectedWorkshop.client" prepend-icon="mdi-domain">
-            <v-list-item-title>{{ selectedWorkshop.client.name }}</v-list-item-title>
-            <v-list-item-subtitle>Client</v-list-item-subtitle>
-          </v-list-item>
-          <v-list-item v-if="selectedWorkshop.workshop_programs?.length" prepend-icon="mdi-book-open-variant">
-            <v-list-item-title>{{ selectedWorkshop.workshop_programs.length }} program(s)</v-list-item-title>
-            <v-list-item-subtitle>
-              {{ selectedWorkshop.workshop_programs.map(wp => wp.program?.title).filter(Boolean).join(', ') }}
-            </v-list-item-subtitle>
-          </v-list-item>
-        </v-list>
-        <v-divider />
-        <v-card-actions class="pa-4">
-          <v-spacer />
-          <v-btn variant="outlined" @click="detailDialog = false">Close</v-btn>
-          <v-btn color="primary" :to="`/manage/workshops/${selectedWorkshop.id}`">View Workshop</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+
   </div>
 </template>
 
 <script setup lang="ts">
 import type { WorkshopWithRelations } from '~/types'
+import FullCalendar from '@fullcalendar/vue3'
+import { classicThemePlugin, dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin } from '~/utils/fullcalendar'
 
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
@@ -226,71 +196,81 @@ function formatDate(dateStr: string) {
 const dayCount = 3
 
 // Calendar
-const calendar = ref()
-const today = ref(new Date())
-const calType = ref('month')
-const detailDialog = ref(false)
-const selectedWorkshop = ref<WorkshopWithRelations | null>(null)
+const calendarRef = ref()
+const calDate = ref(new Date())
+const calDateFormatted = computed(() => {
+  return calDate.value.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+})
 
-interface CalEvent {
-  name: string
-  start: Date
-  end: Date
-  color: string
-  timed: boolean
-  workshop: WorkshopWithRelations
-}
+watch(calDate, (d) => {
+  const api = calendarRef.value?.getApi?.()
+  if (api) api.gotoDate(d)
+})
 
-const calEvents = computed<CalEvent[]>(() => {
+const colorMap: Record<string, string> = { draft: '#9E9E9E', published: '#F59E0B', ongoing: '#10B981', completed: '#3B82F6', cancelled: '#EF4444' }
+const legendItems: Record<string, string> = { draft: 'Draft', published: 'Upcoming', ongoing: 'Ongoing', completed: 'Completed', cancelled: 'Cancelled' }
+const legendColors: Record<string, string> = { draft: 'grey', published: 'primary', ongoing: 'success', completed: 'info', cancelled: 'error' }
+
+const calEvents = computed(() => {
   if (!workshops.value) return []
-  return workshops.value.map(w => {
-    const start = new Date(w.date_start)
-    const end = new Date(w.date_end)
-    end.setDate(end.getDate() + 1)
-    return {
-      name: w.title,
-      start,
-      end,
-      color: chipColor(w.status),
-      timed: false,
-      workshop: w,
+  const events: any[] = []
+  for (const w of workshops.value) {
+    const venue = w.conference_room?.name || ''
+    const schedules = w.schedules?.length
+      ? w.schedules
+      : [{ date_start: w.date_start, date_end: w.date_end, time_start: null, time_end: null }]
+
+    for (const s of schedules) {
+      if (!s.date_start || !s.date_end) continue
+      const hasTime = s.time_start && s.time_end
+      const start = hasTime
+        ? `${s.date_start}T${s.time_start}`
+        : s.date_start
+      const endDate = new Date(s.date_end + 'T00:00:00')
+      endDate.setDate(endDate.getDate() + 1)
+      const end = hasTime
+        ? `${s.date_end}T${s.time_end}`
+        : endDate.toISOString().slice(0, 10)
+
+      events.push({
+        title: w.title,
+        start,
+        end,
+        color: colorMap[w.status] || '#9E9E9E',
+        extendedProps: { workshop: w, venue },
+      })
     }
-  })
-})
-
-function getEventColor(event: CalEvent) {
-  return event.color
-}
-
-function onEventClick(info: any) {
-  const workshop = info.event?.workshop
-  if (workshop) {
-    selectedWorkshop.value = workshop
-    detailDialog.value = true
   }
-}
-
-function goToday() {
-  today.value = new Date()
-}
-
-function formatEventTime(event: CalEvent) {
-  const opts: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit' }
-  return `${event.start.toLocaleTimeString('en-US', opts)} - ${event.end.toLocaleTimeString('en-US', opts)}`
-}
-
-const headerTitle = computed(() => {
-  const d = new Date(today.value)
-  const opts: Intl.DateTimeFormatOptions = calType.value === 'month'
-    ? { month: 'long', year: 'numeric' }
-    : calType.value === 'week'
-      ? { month: 'long', year: 'numeric' }
-      : { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }
-  return d.toLocaleDateString('en-US', opts)
+  return events
 })
+
+const calendarOptions = computed(() => ({
+  plugins: [classicThemePlugin, dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin],
+  initialView: 'dayGridMonth',
+  headerToolbar: {
+    left: 'prev,next today',
+    center: 'title',
+    right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek',
+  },
+  events: calEvents.value,
+  eventClick: (info: any) => {
+    const workshop = info.event?.extendedProps?.workshop
+    if (workshop) navigateTo(`/manage/workshops/${workshop.id}`)
+  },
+  height: 'auto' as const,
+  nowIndicator: true,
+  weekends: true,
+  dayMaxEvents: 3,
+  buttonText: { today: 'Today', month: 'Month', week: 'Week', day: 'Day', list: 'List' },
+}))
 </script>
 
 <style scoped>
 .opacity-60 { opacity: 0.6; }
-:deep(.v-calendar) { height: 100% !important; }
+:deep(.fc) { font-family: inherit; }
+:deep(.fc .fc-toolbar-title) { font-size: 1.15rem; font-weight: 600; }
+:deep(.fc .fc-button) { text-transform: none; font-weight: 500; }
+:deep(.fc .fc-button-active) { opacity: 1; }
+:deep(.fc .fc-event) { cursor: pointer; border-radius: 4px; border: none; padding: 1px 4px; }
+:deep(.fc .fc-daygrid-event) { margin-bottom: 2px; }
 </style>

@@ -2,7 +2,7 @@
   <div>
     <div class="d-flex align-center mb-4 flex-wrap ga-3">
       <div>
-        <h1 class="text-h4 font-weight-bold">Programs</h1>
+        <h1 class="text-h4 font-weight-bold ma-0">Programs</h1>
         <div class="text-caption text-medium-emphasis mt-1">Curriculum organized by workshop</div>
       </div>
       <v-spacer />
@@ -46,7 +46,7 @@
                   <div class="text-center bg-grey-lighten-4 rounded pa-3" style="min-width:60px">
                     <template v-if="item.workshop_date_start">
                       <div class="text-caption font-weight-bold text-medium-emphasis text-uppercase">{{ monthLabel(item.workshop_date_start) }}</div>
-                      <div class="text-h4 font-weight-bold">{{ dayLabel(item.workshop_date_start) }}</div>
+                      <div class="text-h4 font-weight-bold ma-0">{{ dayLabel(item.workshop_date_start) }}</div>
                     </template>
                     <template v-else>
                       <v-icon size="24" class="text-medium-emphasis">mdi-calendar-blank</v-icon>

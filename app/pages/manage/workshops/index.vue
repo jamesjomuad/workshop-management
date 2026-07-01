@@ -1,12 +1,12 @@
 <template>
-  <div>
+  <div class="d-flex flex-column" style="height: calc(100vh - 128px)">
     <div class="d-flex align-center mb-4 flex-wrap ga-3">
       <div>
-        <h1 class="text-h4 font-weight-bold">Workshops</h1>
+        <h1 class="text-h4 font-weight-bold ma-0">Workshops</h1>
         <div class="text-caption text-medium-emphasis mt-1">All scheduled workshop events</div>
       </div>
       <v-spacer />
-      <v-btn-toggle v-model="view" density="comfortable" variant="outlined" divided mandatory class="me-2">
+      <v-btn-toggle v-model="view" variant="outlined" divided mandatory class="me-2">
         <v-btn value="list" size="small" icon><v-icon size="18">mdi-view-list</v-icon></v-btn>
         <v-btn value="calendar" size="small" icon><v-icon size="18">mdi-calendar</v-icon></v-btn>
       </v-btn-toggle>
@@ -41,7 +41,7 @@
           <template #prepend>
             <div class="text-center bg-grey-lighten-4 rounded pa-3" style="min-width:60px">
               <div class="text-caption font-weight-bold text-medium-emphasis text-uppercase">{{ monthLabel(item.date_start) }}</div>
-              <div class="text-h4 font-weight-bold">{{ dayLabel(item.date_start) }}</div>
+              <div class="text-h4 font-weight-bold ma-0">{{ dayLabel(item.date_start) }}</div>
             </div>
           </template>
 
@@ -104,8 +104,8 @@
     </div>
 
     <!-- CALENDAR VIEW -->
-    <div v-else>
-      <v-card rounded="lg" variant="outlined">
+    <div v-else class="d-flex flex-column flex-grow-1">
+      <v-card rounded="lg" variant="outlined" class="d-flex flex-column flex-grow-1">
         <v-sheet class="d-flex align-center pa-2">
           <v-btn icon variant="text" size="small" @click="calendar?.prev()">
             <v-icon>mdi-chevron-left</v-icon>
@@ -131,7 +131,7 @@
           :event-color="getEventColor"
           event-overlap-mode="column"
           :weekdays="[0, 1, 2, 3, 4, 5, 6]"
-          height="650"
+          class="flex-grow-1"
           @click:event="onEventClick"
         >
           <template #event="{ event }">
@@ -280,7 +280,7 @@ function formatEventTime(event: CalEvent) {
 }
 
 const headerTitle = computed(() => {
-  const d = today.value
+  const d = new Date(today.value)
   const opts: Intl.DateTimeFormatOptions = calType.value === 'month'
     ? { month: 'long', year: 'numeric' }
     : calType.value === 'week'
@@ -292,4 +292,5 @@ const headerTitle = computed(() => {
 
 <style scoped>
 .opacity-60 { opacity: 0.6; }
+:deep(.v-calendar) { height: 100% !important; }
 </style>

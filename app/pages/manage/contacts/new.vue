@@ -5,7 +5,7 @@
         <v-icon>mdi-arrow-left</v-icon>
       </v-btn>
       <v-divider vertical class="align-self-stretch" />
-      <h1 class="text-h4 font-weight-bold">New Contact</h1>
+      <h1 class="text-h4 font-weight-bold ma-0">New Contact</h1>
       <v-spacer />
       <v-btn color="primary" :loading="saving" @click="save">Create contact</v-btn>
     </div>

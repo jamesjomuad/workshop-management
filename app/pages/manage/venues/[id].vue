@@ -5,7 +5,7 @@
         <v-icon>mdi-arrow-left</v-icon>
       </v-btn>
       <v-divider vertical class="align-self-stretch" />
-      <h1 class="text-h4 font-weight-bold">Edit: {{ venue.name }}</h1>
+      <h1 class="text-h4 font-weight-bold ma-0">Edit: {{ venue.name }}</h1>
       <v-spacer />
       <v-btn variant="outlined" :to="'/manage/venues'">Cancel</v-btn>
       <v-btn color="primary" :loading="saving" @click="handleSave">Save changes</v-btn>

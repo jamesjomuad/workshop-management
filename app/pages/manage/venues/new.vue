@@ -5,7 +5,7 @@
         <v-icon>mdi-arrow-left</v-icon>
       </v-btn>
       <v-divider vertical class="align-self-stretch" />
-      <h1 class="text-h4 font-weight-bold">New Venue</h1>
+      <h1 class="text-h4 font-weight-bold ma-0">New Venue</h1>
       <v-spacer />
       <v-btn variant="outlined" :to="'/manage/venues'">Cancel</v-btn>
       <v-btn color="primary" :loading="saving" @click="handleSave">Save venue</v-btn>

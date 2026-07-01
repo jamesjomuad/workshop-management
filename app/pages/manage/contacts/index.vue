@@ -2,7 +2,7 @@
   <div>
     <div class="d-flex align-center mb-4">
       <div>
-        <h1 class="text-h4 font-weight-bold">Contacts</h1>
+        <h1 class="text-h4 font-weight-bold ma-0">Contacts</h1>
         <div class="text-caption text-medium-emphasis mt-1">{{ companies?.length ?? 0 }} companies · {{ contacts?.length ?? 0 }} people</div>
       </div>
       <v-spacer />

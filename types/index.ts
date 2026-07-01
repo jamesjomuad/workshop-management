@@ -114,6 +114,8 @@ export interface Workshop {
   description: string | null
   date_start: string
   date_end: string
+  time_start: string | null
+  time_end: string | null
   conference_room_id: string | null
   facilitator_id: string | null
   client_id: string | null

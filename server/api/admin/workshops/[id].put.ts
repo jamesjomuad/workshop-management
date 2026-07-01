@@ -12,6 +12,8 @@ export default defineEventHandler(async (event): Promise<Workshop> => {
       description: body.description || null,
       date_start: body.date_start,
       date_end: body.date_end,
+      time_start: body.time_start || null,
+      time_end: body.time_end || null,
       conference_room_id: body.conference_room_id || null,
       facilitator_id: body.facilitator_id || null,
       client_id: body.client_id || null,

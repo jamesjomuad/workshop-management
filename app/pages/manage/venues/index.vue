@@ -2,7 +2,7 @@
   <div>
     <div class="d-flex align-center mb-4">
       <div>
-        <h1 class="text-h4 font-weight-bold">Venues</h1>
+        <h1 class="text-h4 font-weight-bold ma-0">Venues</h1>
         <div class="text-caption text-medium-emphasis mt-1">{{ venues?.length ?? 0 }} conference rooms</div>
       </div>
       <v-spacer />

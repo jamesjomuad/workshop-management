@@ -5,7 +5,7 @@
         <v-icon>mdi-arrow-left</v-icon>
       </v-btn>
       <v-divider vertical class="align-self-stretch" />
-      <h1 class="text-h4 font-weight-bold">{{ program?.title || 'Program' }}</h1>
+      <h1 class="text-h4 font-weight-bold ma-0">{{ program?.title || 'Program' }}</h1>
       <v-chip v-if="program?.deleted_at" size="small" color="grey" variant="tonal">Archived</v-chip>
       <v-spacer />
       <v-btn v-if="program?.deleted_at" color="success" variant="outlined" prepend-icon="mdi-restore" :loading="restoring" @click="onRestore">

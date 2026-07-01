@@ -5,7 +5,7 @@
         <v-icon>mdi-arrow-left</v-icon>
       </v-btn>
       <v-divider vertical class="align-self-stretch" />
-      <h1 class="text-h4 font-weight-bold">New Workshop</h1>
+      <h1 class="text-h4 font-weight-bold ma-0">New Workshop</h1>
       <v-spacer />
       <v-btn variant="outlined" :loading="savingDraft" @click="save('draft')">Save as draft</v-btn>
       <v-btn color="primary" :loading="savingPublish" @click="save('published')">Publish workshop</v-btn>
@@ -58,6 +58,14 @@
                 <v-btn variant="outlined" size="small" color="primary" prepend-icon="mdi-plus" class="align-self-start" @click="addRange">
                   Add date range
                 </v-btn>
+                <v-row class="mt-2">
+                  <v-col cols="6">
+                    <v-text-field v-model="form.time_start" name="time_start" label="Start time" type="time" variant="outlined" density="comfortable" hide-details />
+                  </v-col>
+                  <v-col cols="6">
+                    <v-text-field v-model="form.time_end" name="time_end" label="End time" type="time" variant="outlined" density="comfortable" hide-details />
+                  </v-col>
+                </v-row>
               </v-card-text>
             </v-card>
           </v-col>
@@ -110,6 +118,20 @@
                     <v-list-item title="No venues found" />
                   </template>
                 </v-autocomplete>
+                <v-alert
+                  v-if="conflicts.length > 0"
+                  type="warning"
+                  variant="tonal"
+                  density="compact"
+                  class="mt-3"
+                  closable
+                  @click:close="conflicts = []"
+                >
+                  <div class="font-weight-bold mb-1">Venue conflict detected</div>
+                  <div v-for="c in conflicts" :key="c.id" class="text-caption">
+                    <strong>{{ c.title }}</strong> — {{ formatDate(c.date_start) }} to {{ formatDate(c.date_end) }}<span v-if="c.time_start"> ({{ c.time_start }}–{{ c.time_end }})</span>
+                  </div>
+                </v-alert>
               </v-card-text>
             </v-card>
           </v-col>
@@ -518,6 +540,8 @@ const form = reactive({
   title: '',
   description: '',
   dateRanges: [{ start: '', end: '' }],
+  time_start: '08:00',
+  time_end: '17:00',
   conference_room_id: null as string | null,
   client_id: null as string | null,
   facilitator_id: null as string | null,
@@ -529,6 +553,7 @@ const status = ref('draft')
 const savingDraft = ref(false)
 const savingPublish = ref(false)
 const formRef = ref<VForm>()
+const conflicts = ref<any[]>([])
 
 const required = [(v: any) => !!v || 'Required']
 const today = new Date().toISOString().split('T')[0]
@@ -582,6 +607,33 @@ function addRange() {
 function removeRange(i: number) {
   form.dateRanges.splice(i, 1)
 }
+
+async function checkConflicts() {
+  if (!form.conference_room_id) { conflicts.value = []; return }
+  const filled = form.dateRanges.filter(r => r.start && r.end)
+  if (!filled.length) { conflicts.value = []; return }
+  const ds = filled.map(r => r.start).sort()[0]
+  const de = filled.map(r => r.end).sort().slice(-1)[0]
+  const params = new URLSearchParams({
+    venue_id: form.conference_room_id,
+    date_start: typeof ds === 'string' ? ds : (ds as Date).toISOString().slice(0, 10),
+    date_end: typeof de === 'string' ? de : (de as Date).toISOString().slice(0, 10),
+  })
+  if (form.time_start) params.set('time_start', form.time_start)
+  if (form.time_end) params.set('time_end', form.time_end)
+  try {
+    const data = await $fetch<{ conflicts: any[] }>(`/api/admin/workshops.conflicts?${params}`)
+    conflicts.value = data.conflicts
+  } catch { conflicts.value = [] }
+}
+
+function formatDate(d: string) {
+  if (!d) return ''
+  return new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+watch(() => [form.conference_room_id, form.time_start, form.time_end], () => checkConflicts())
+watch(() => form.dateRanges.map(r => `${r.start}-${r.end}`).join(','), () => checkConflicts())
 
 const summary = computed(() => {
   const title = form.title
@@ -637,15 +689,25 @@ async function save(publishStatus: string) {
       return
     }
 
+    if (conflicts.value.length > 0 && status.value !== 'draft') {
+      snackbar.value = { show: true, text: 'Resolve venue conflicts before publishing', color: 'error' }
+      return
+    }
+
     const programLinks = programs.value
       .filter(p => p.program_id)
       .map(p => ({ program_id: p.program_id!, trainer_id: p.trainer_id }))
 
+    const ds = form.dateRanges.filter(r => r.start).map(r => r.start).sort()[0]
+    const de = form.dateRanges.filter(r => r.end).map(r => r.end).sort().slice(-1)[0]
+
     await createWorkshop({
       title: form.title,
       description: form.description || null,
-      date_start: form.dateRanges.filter(r => r.start).map(r => r.start).sort()[0],
-      date_end: form.dateRanges.filter(r => r.end).map(r => r.end).sort().slice(-1)[0],
+      date_start: typeof ds === 'string' ? ds : (ds as Date).toISOString().slice(0, 10),
+      date_end: typeof de === 'string' ? de : (de as Date).toISOString().slice(0, 10),
+      time_start: form.time_start || null,
+      time_end: form.time_end || null,
       conference_room_id: form.conference_room_id,
       client_id: form.client_id,
       facilitator_id: form.facilitator_id,

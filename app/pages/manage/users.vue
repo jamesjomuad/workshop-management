@@ -2,7 +2,7 @@
   <div>
     <div class="d-flex align-center mb-4">
       <div>
-        <h1 class="text-h4 font-weight-bold">Users</h1>
+        <h1 class="text-h4 font-weight-bold ma-0">Users</h1>
         <div class="text-caption text-medium-emphasis mt-1">{{ users?.length ?? 0 }} users</div>
       </div>
       <v-spacer />

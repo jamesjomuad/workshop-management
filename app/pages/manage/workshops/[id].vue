@@ -711,21 +711,23 @@ function removeSchedule(i: number) {
   form.schedules.splice(i, 1)
 }
 
-function fmtDateShort(d: string) {
+function fmtDateShort(d: any) {
   if (!d) return ''
-  return new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  const dt = d instanceof Date ? d : new Date(d + 'T00:00:00')
+  return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
 async function checkConflicts() {
   if (!form.conference_room_id) { conflicts.value = []; return }
   const filled = form.schedules.filter(s => s.date_start && s.date_end)
   if (!filled.length) { conflicts.value = []; return }
+  const toStr = (d: any) => d instanceof Date ? d.toISOString().slice(0, 10) : d
   const allConflicts: any[] = []
   for (const s of filled) {
     const params = new URLSearchParams({
       venue_id: form.conference_room_id,
-      date_start: s.date_start,
-      date_end: s.date_end,
+      date_start: toStr(s.date_start),
+      date_end: toStr(s.date_end),
       exclude_id: route.params.id as string,
     })
     if (s.time_start) params.set('time_start', s.time_start)
@@ -812,12 +814,13 @@ async function save(publishStatus: string) {
       .map(p => ({ program_id: p.program_id!, trainer_id: p.trainer_id }))
 
     const filledSchedules = form.schedules.filter(s => s.date_start && s.date_end)
-    const ds = filledSchedules.map(s => s.date_start).sort()[0]
-    const de = filledSchedules.map(s => s.date_end).sort().slice(-1)[0]
+    const toStr = (d: any) => d instanceof Date ? d.toISOString().slice(0, 10) : d
+    const ds = filledSchedules.map(s => toStr(s.date_start)).sort()[0]
+    const de = filledSchedules.map(s => toStr(s.date_end)).sort().slice(-1)[0]
 
     const schedulePayload = filledSchedules.map(s => ({
-      date_start: s.date_start,
-      date_end: s.date_end,
+      date_start: toStr(s.date_start),
+      date_end: toStr(s.date_end),
       time_start: s.time_start || null,
       time_end: s.time_end || null,
     }))
@@ -854,13 +857,13 @@ watch(workshop, (w) => {
 
     if (w.schedules?.length) {
       form.schedules = w.schedules.map(s => ({
-        date_start: s.date_start || '',
-        date_end: s.date_end || '',
+        date_start: s.date_start ? new Date(s.date_start + 'T00:00:00') : '',
+        date_end: s.date_end ? new Date(s.date_end + 'T00:00:00') : '',
         time_start: s.time_start || '08:00',
         time_end: s.time_end || '17:00',
       }))
     } else if (w.date_start) {
-      form.schedules = [{ date_start: w.date_start, date_end: w.date_end || w.date_start, time_start: '08:00', time_end: '17:00' }]
+      form.schedules = [{ date_start: new Date(w.date_start + 'T00:00:00'), date_end: new Date((w.date_end || w.date_start) + 'T00:00:00'), time_start: '08:00', time_end: '17:00' }]
     } else {
       form.schedules = [{ date_start: '', date_end: '', time_start: '08:00', time_end: '17:00' }]
     }

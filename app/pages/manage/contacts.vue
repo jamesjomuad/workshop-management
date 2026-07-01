@@ -16,7 +16,7 @@
         v-if="tab === 'companies'"
         color="primary"
         prepend-icon="mdi-plus"
-        @click="openCompanyDialog()"
+        to="/manage/companies/new"
       >Add Company</v-btn>
     </div>
 
@@ -201,11 +201,11 @@
           <v-text-field v-model="companyForm.contact_phone" label="Phone" name="phone" variant="outlined" density="comfortable" hide-details />
           <v-text-field v-model="companyForm.website" label="Website" name="website" variant="outlined" density="comfortable" hide-details hint="https://..." />
           <v-textarea v-model="companyForm.address" label="Address" name="address" variant="outlined" density="comfortable" hide-details rows="2" />
-          <v-row dense>
+          <v-row density="comfortable">
             <v-col cols="6"><v-text-field v-model="companyForm.city" label="City" name="city" variant="outlined" density="comfortable" hide-details /></v-col>
             <v-col cols="6"><v-text-field v-model="companyForm.state" label="State / Province" name="state" variant="outlined" density="comfortable" hide-details /></v-col>
           </v-row>
-          <v-row dense>
+          <v-row density="comfortable">
             <v-col cols="6"><v-text-field v-model="companyForm.country" label="Country" name="country" variant="outlined" density="comfortable" hide-details /></v-col>
             <v-col cols="6"><v-text-field v-model="companyForm.postal_code" label="Postal code" name="postal_code" variant="outlined" density="comfortable" hide-details /></v-col>
           </v-row>

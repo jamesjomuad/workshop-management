@@ -86,6 +86,17 @@
         <template #item.contact_phone="{ value }">
           <span class="text-body-2">{{ value || '—' }}</span>
         </template>
+        <template #item.status="{ value }">
+          <v-chip size="small" variant="tonal" :color="value === 'active' ? 'success' : value === 'inactive' ? 'grey' : 'warning'">
+            {{ value }}
+          </v-chip>
+        </template>
+        <template #item.industry="{ value }">
+          <span class="text-body-2">{{ value || '—' }}</span>
+        </template>
+        <template #item.size="{ value }">
+          <span class="text-body-2">{{ value || '—' }}</span>
+        </template>
         <template #item.contacts="{ item }">
           <span class="text-body-2">{{ contactCount(item.id) }}</span>
         </template>
@@ -175,14 +186,35 @@
       </v-card>
     </v-dialog>
 
-    <v-dialog v-model="companyDialog" max-width="500">
+    <v-dialog v-model="companyDialog" max-width="700">
       <v-card rounded="lg">
         <v-card-title class="text-body-1 font-weight-bold">{{ editingCompany ? 'Edit Company' : 'Add Company' }}</v-card-title>
         <v-divider />
-        <v-card-text class="d-flex flex-column ga-3 pt-4">
+        <v-card-text class="d-flex flex-column ga-3 pt-4" style="max-height: 70vh; overflow-y: auto">
+          <div class="text-subtitle-2 font-weight-bold text-medium-emphasis">Core Identity</div>
           <v-text-field v-model="companyForm.name" label="Company name *" name="name" variant="outlined" density="comfortable" hide-details="auto" :rules="[(v: any) => !!v || 'Required']" />
+          <v-text-field v-model="companyForm.slug" label="Slug (URL-friendly)" name="slug" variant="outlined" density="comfortable" hide-details hint="Auto-generated from name if left empty" />
+          <v-select v-model="companyForm.status" :items="statusOptions" label="Status" variant="outlined" density="comfortable" hide-details />
+
+          <div class="text-subtitle-2 font-weight-bold text-medium-emphasis mt-2">Contact Info</div>
           <v-text-field v-model="companyForm.contact_email" label="Email" name="email" type="email" variant="outlined" density="comfortable" hide-details />
           <v-text-field v-model="companyForm.contact_phone" label="Phone" name="phone" variant="outlined" density="comfortable" hide-details />
+          <v-text-field v-model="companyForm.website" label="Website" name="website" variant="outlined" density="comfortable" hide-details hint="https://..." />
+          <v-textarea v-model="companyForm.address" label="Address" name="address" variant="outlined" density="comfortable" hide-details rows="2" />
+          <v-row dense>
+            <v-col cols="6"><v-text-field v-model="companyForm.city" label="City" name="city" variant="outlined" density="comfortable" hide-details /></v-col>
+            <v-col cols="6"><v-text-field v-model="companyForm.state" label="State / Province" name="state" variant="outlined" density="comfortable" hide-details /></v-col>
+          </v-row>
+          <v-row dense>
+            <v-col cols="6"><v-text-field v-model="companyForm.country" label="Country" name="country" variant="outlined" density="comfortable" hide-details /></v-col>
+            <v-col cols="6"><v-text-field v-model="companyForm.postal_code" label="Postal code" name="postal_code" variant="outlined" density="comfortable" hide-details /></v-col>
+          </v-row>
+
+          <div class="text-subtitle-2 font-weight-bold text-medium-emphasis mt-2">Business Details</div>
+          <v-text-field v-model="companyForm.industry" label="Industry" name="industry" variant="outlined" density="comfortable" hide-details />
+          <v-select v-model="companyForm.size" :items="sizeOptions" label="Company size" variant="outlined" density="comfortable" hide-details clearable />
+          <v-text-field v-model="companyForm.registration_number" label="Registration number" name="registration_number" variant="outlined" density="comfortable" hide-details />
+          <v-text-field v-model="companyForm.tax_number" label="Tax number (VAT / TIN)" name="tax_number" variant="outlined" density="comfortable" hide-details />
         </v-card-text>
         <v-divider />
         <v-card-actions class="pa-4">
@@ -249,6 +281,9 @@ function initials(c: Contact) {
 
 const companyHeaders = [
   { title: 'Company', key: 'name', sortable: true },
+  { title: 'Status', key: 'status', sortable: true },
+  { title: 'Industry', key: 'industry', sortable: false },
+  { title: 'Size', key: 'size', sortable: false },
   { title: 'Email', key: 'contact_email', sortable: false },
   { title: 'Phone', key: 'contact_phone', sortable: false },
   { title: 'Contacts', key: 'contacts', sortable: false },
@@ -280,7 +315,27 @@ const deletingItem = ref<Company | Contact | null>(null)
 const deleteMessage = ref('')
 const saving = ref(false)
 
-const companyForm = reactive({ name: '', contact_email: '', contact_phone: '' })
+const companyForm = reactive({
+  name: '',
+  slug: '',
+  logo_url: '',
+  status: 'active' as const,
+  contact_email: '',
+  contact_phone: '',
+  website: '',
+  address: '',
+  city: '',
+  state: '',
+  country: '',
+  postal_code: '',
+  industry: '',
+  size: null as string | null,
+  registration_number: '',
+  tax_number: '',
+})
+
+const statusOptions = ['active', 'inactive', 'suspended']
+const sizeOptions = ['1-10', '11-50', '51-200', '200+']
 const contactForm = reactive({ company_id: '', first_name: '', last_name: '', email: '', phone: '', position: '', notes: '' })
 
 function openContactDialog(companyIdOrItem?: string | Contact, item?: Contact) {
@@ -340,13 +395,39 @@ function openCompanyDialog(item?: Company) {
   if (item) {
     editingCompany.value = item
     companyForm.name = item.name
+    companyForm.slug = item.slug ?? ''
+    companyForm.logo_url = item.logo_url ?? ''
+    companyForm.status = item.status ?? 'active'
     companyForm.contact_email = item.contact_email ?? ''
     companyForm.contact_phone = item.contact_phone ?? ''
+    companyForm.website = item.website ?? ''
+    companyForm.address = item.address ?? ''
+    companyForm.city = item.city ?? ''
+    companyForm.state = item.state ?? ''
+    companyForm.country = item.country ?? ''
+    companyForm.postal_code = item.postal_code ?? ''
+    companyForm.industry = item.industry ?? ''
+    companyForm.size = item.size ?? null
+    companyForm.registration_number = item.registration_number ?? ''
+    companyForm.tax_number = item.tax_number ?? ''
   } else {
     editingCompany.value = null
     companyForm.name = ''
+    companyForm.slug = ''
+    companyForm.logo_url = ''
+    companyForm.status = 'active'
     companyForm.contact_email = ''
     companyForm.contact_phone = ''
+    companyForm.website = ''
+    companyForm.address = ''
+    companyForm.city = ''
+    companyForm.state = ''
+    companyForm.country = ''
+    companyForm.postal_code = ''
+    companyForm.industry = ''
+    companyForm.size = null
+    companyForm.registration_number = ''
+    companyForm.tax_number = ''
   }
   companyDialog.value = true
 }
@@ -355,11 +436,29 @@ async function saveCompany() {
   if (!companyForm.name) return
   saving.value = true
   try {
+    const payload = {
+      name: companyForm.name,
+      slug: companyForm.slug || null,
+      logo_url: companyForm.logo_url || null,
+      status: companyForm.status,
+      contact_email: companyForm.contact_email || null,
+      contact_phone: companyForm.contact_phone || null,
+      website: companyForm.website || null,
+      address: companyForm.address || null,
+      city: companyForm.city || null,
+      state: companyForm.state || null,
+      country: companyForm.country || null,
+      postal_code: companyForm.postal_code || null,
+      industry: companyForm.industry || null,
+      size: companyForm.size || null,
+      registration_number: companyForm.registration_number || null,
+      tax_number: companyForm.tax_number || null,
+    }
     if (editingCompany.value) {
-      await updateCompany(editingCompany.value.id, { name: companyForm.name, contact_email: companyForm.contact_email || null, contact_phone: companyForm.contact_phone || null })
+      await updateCompany(editingCompany.value.id, payload)
       snackbar.value = { show: true, text: 'Company updated', color: 'success' }
     } else {
-      await createCompany({ name: companyForm.name, contact_email: companyForm.contact_email || null, contact_phone: companyForm.contact_phone || null })
+      await createCompany(payload)
       snackbar.value = { show: true, text: 'Company added', color: 'success' }
     }
     companyDialog.value = false

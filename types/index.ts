@@ -68,11 +68,27 @@ export interface UserRoleRecord {
   created_at: string
 }
 
+export type CompanyStatus = 'active' | 'inactive' | 'suspended'
+export type CompanySize = '1-10' | '11-50' | '51-200' | '200+'
+
 export interface Company {
   id: string
   name: string
+  slug: string | null
+  logo_url: string | null
+  status: CompanyStatus
   contact_email: string | null
   contact_phone: string | null
+  website: string | null
+  address: string | null
+  city: string | null
+  state: string | null
+  country: string | null
+  postal_code: string | null
+  industry: string | null
+  size: CompanySize | null
+  registration_number: string | null
+  tax_number: string | null
   created_at: string
   updated_at: string
 }

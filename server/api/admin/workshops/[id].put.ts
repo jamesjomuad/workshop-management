@@ -12,8 +12,6 @@ export default defineEventHandler(async (event): Promise<Workshop> => {
       description: body.description || null,
       date_start: body.date_start,
       date_end: body.date_end,
-      time_start: body.time_start || null,
-      time_end: body.time_end || null,
       conference_room_id: body.conference_room_id || null,
       facilitator_id: body.facilitator_id || null,
       client_id: body.client_id || null,
@@ -43,6 +41,29 @@ export default defineEventHandler(async (event): Promise<Workshop> => {
         })))
 
       if (insError) throw createError({ statusCode: 500, message: insError.message })
+    }
+  }
+
+  if (body.schedules) {
+    const { error: delErr } = await supabase
+      .from('workshop_schedules')
+      .delete()
+      .eq('workshop_id', id)
+
+    if (delErr) throw createError({ statusCode: 500, message: delErr.message })
+
+    if (body.schedules.length) {
+      const { error: insErr } = await supabase
+        .from('workshop_schedules')
+        .insert(body.schedules.map((s: any) => ({
+          workshop_id: id,
+          date_start: s.date_start,
+          date_end: s.date_end,
+          time_start: s.time_start || null,
+          time_end: s.time_end || null,
+        })))
+
+      if (insErr) throw createError({ statusCode: 500, message: insErr.message })
     }
   }
 

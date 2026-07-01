@@ -46,26 +46,116 @@
                 </template>
               </v-card-item>
               <v-divider />
-              <v-card-text class="d-flex flex-column ga-2">
-                <div v-for="(r, i) in form.dateRanges" :key="i" class="d-flex align-center ga-2">
-                  <v-date-input v-model="r.start" :name="'date_start_' + i" label="Start date *" :min="today" :rules="required" variant="outlined" density="comfortable" hide-details="auto" />
-                  <v-icon class="flex-shrink-0">mdi-chevron-right</v-icon>
-                  <v-date-input v-model="r.end" :name="'date_end_' + i" label="End date *" :min="r.start || today" :rules="[...required, v => !r.start || !v || v >= r.start || 'End must be after start']" variant="outlined" density="comfortable" hide-details="auto" />
-                  <v-btn v-if="form.dateRanges.length > 1" icon variant="text" size="small" color="error" @click="removeRange(i)">
-                    <v-icon>mdi-close</v-icon>
-                  </v-btn>
+              <v-card-text class="d-flex flex-column ga-3">
+                <div v-for="(s, i) in form.schedules" :key="i" class="schedule-entry pa-3 bg-grey-lighten-4 rounded-lg">
+                  <div class="d-flex align-center mb-2">
+                    <div class="text-caption font-weight-bold text-medium-emphasis">Schedule {{ i + 1 }}</div>
+                    <v-spacer />
+                    <v-btn v-if="form.schedules.length > 1" icon variant="text" size="x-small" color="error" @click="removeSchedule(i)">
+                      <v-icon size="16">mdi-close</v-icon>
+                    </v-btn>
+                  </div>
+                  <div class="d-flex flex-column ga-2">
+                    <div class="d-flex align-center ga-2">
+                      <v-menu :close-on-content-click="false">
+                        <template #activator="{ props }">
+                          <v-text-field
+                            :model-value="fmtDateShort(s.date_start)"
+                            label="Start date *"
+                            readonly
+                            prepend-inner-icon="mdi-calendar"
+                            variant="outlined"
+                            density="comfortable"
+                            hide-details="auto"
+                            v-bind="props"
+                            :rules="required"
+                            style="cursor:pointer"
+                          />
+                        </template>
+                        <v-date-picker
+                          v-model="s.date_start"
+                          :min="today"
+                          color="primary"
+                          @update:model-value="() => { if (s.date_end && s.date_start > s.date_end) s.date_end = s.date_start }"
+                        />
+                      </v-menu>
+                      <v-icon class="flex-shrink-0">mdi-chevron-right</v-icon>
+                      <v-menu :close-on-content-click="false">
+                        <template #activator="{ props }">
+                          <v-text-field
+                            :model-value="fmtDateShort(s.date_end)"
+                            label="End date *"
+                            readonly
+                            prepend-inner-icon="mdi-calendar"
+                            variant="outlined"
+                            density="comfortable"
+                            hide-details="auto"
+                            v-bind="props"
+                            :rules="[...required, v => !s.date_start || !s.date_end || s.date_end >= s.date_start || 'End must be after start']"
+                            style="cursor:pointer"
+                          />
+                        </template>
+                        <v-date-picker
+                          v-model="s.date_end"
+                          :min="s.date_start || today"
+                          color="primary"
+                        />
+                      </v-menu>
+                    </div>
+                    <div class="d-flex align-center ga-2">
+                      <v-menu :close-on-content-click="false">
+                        <template #activator="{ props }">
+                          <v-text-field
+                            :model-value="s.time_start || 'Not set'"
+                            label="Start time"
+                            readonly
+                            prepend-inner-icon="mdi-clock-outline"
+                            variant="outlined"
+                            density="comfortable"
+                            hide-details
+                            v-bind="props"
+                            style="cursor:pointer"
+                            clearable
+                            @click:clear="s.time_start = null"
+                          />
+                        </template>
+                        <v-time-picker
+                          v-model="s.time_start"
+                          format="24hr"
+                          color="primary"
+                          @update:model-value="() => {}"
+                        />
+                      </v-menu>
+                      <v-icon class="flex-shrink-0">mdi-chevron-right</v-icon>
+                      <v-menu :close-on-content-click="false">
+                        <template #activator="{ props }">
+                          <v-text-field
+                            :model-value="s.time_end || 'Not set'"
+                            label="End time"
+                            readonly
+                            prepend-inner-icon="mdi-clock-outline"
+                            variant="outlined"
+                            density="comfortable"
+                            hide-details
+                            v-bind="props"
+                            style="cursor:pointer"
+                            clearable
+                            @click:clear="s.time_end = null"
+                          />
+                        </template>
+                        <v-time-picker
+                          v-model="s.time_end"
+                          format="24hr"
+                          color="primary"
+                          @update:model-value="() => {}"
+                        />
+                      </v-menu>
+                    </div>
+                  </div>
                 </div>
-                <v-btn variant="outlined" size="small" color="primary" prepend-icon="mdi-plus" class="align-self-start" @click="addRange">
-                  Add date range
+                <v-btn variant="outlined" size="small" color="primary" prepend-icon="mdi-plus" class="align-self-start" @click="addSchedule">
+                  Add schedule
                 </v-btn>
-                <v-row class="mt-2">
-                  <v-col cols="6">
-                    <v-text-field v-model="form.time_start" name="time_start" label="Start time" type="time" variant="outlined" density="comfortable" hide-details />
-                  </v-col>
-                  <v-col cols="6">
-                    <v-text-field v-model="form.time_end" name="time_end" label="End time" type="time" variant="outlined" density="comfortable" hide-details />
-                  </v-col>
-                </v-row>
               </v-card-text>
             </v-card>
           </v-col>
@@ -539,9 +629,7 @@ const { programs: allPrograms } = useAdminPrograms()
 const form = reactive({
   title: '',
   description: '',
-  dateRanges: [{ start: '', end: '' }],
-  time_start: '08:00',
-  time_end: '17:00',
+  schedules: [{ date_start: '' as string, date_end: '' as string, time_start: '08:00' as string | null, time_end: '17:00' as string | null }] as Array<{ date_start: string; date_end: string; time_start: string | null; time_end: string | null }>,
   conference_room_id: null as string | null,
   client_id: null as string | null,
   facilitator_id: null as string | null,
@@ -600,31 +688,40 @@ function stepCapacity(delta: number) {
   form.max_capacity = Math.max(1, Math.min(200, (form.max_capacity || 0) + delta))
 }
 
-function addRange() {
-  form.dateRanges.push({ start: '', end: '' })
+function addSchedule() {
+  form.schedules.push({ date_start: '', date_end: '', time_start: '08:00', time_end: '17:00' })
 }
 
-function removeRange(i: number) {
-  form.dateRanges.splice(i, 1)
+function removeSchedule(i: number) {
+  form.schedules.splice(i, 1)
+}
+
+function fmtDateShort(d: string) {
+  if (!d) return ''
+  return new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
 async function checkConflicts() {
   if (!form.conference_room_id) { conflicts.value = []; return }
-  const filled = form.dateRanges.filter(r => r.start && r.end)
+  const filled = form.schedules.filter(s => s.date_start && s.date_end)
   if (!filled.length) { conflicts.value = []; return }
-  const ds = filled.map(r => r.start).sort()[0]
-  const de = filled.map(r => r.end).sort().slice(-1)[0]
-  const params = new URLSearchParams({
-    venue_id: form.conference_room_id,
-    date_start: typeof ds === 'string' ? ds : (ds as Date).toISOString().slice(0, 10),
-    date_end: typeof de === 'string' ? de : (de as Date).toISOString().slice(0, 10),
-  })
-  if (form.time_start) params.set('time_start', form.time_start)
-  if (form.time_end) params.set('time_end', form.time_end)
-  try {
-    const data = await $fetch<{ conflicts: any[] }>(`/api/admin/workshops.conflicts?${params}`)
-    conflicts.value = data.conflicts
-  } catch { conflicts.value = [] }
+  const allConflicts: any[] = []
+  for (const s of filled) {
+    const params = new URLSearchParams({
+      venue_id: form.conference_room_id,
+      date_start: s.date_start,
+      date_end: s.date_end,
+    })
+    if (s.time_start) params.set('time_start', s.time_start)
+    if (s.time_end) params.set('time_end', s.time_end)
+    try {
+      const data = await $fetch<{ conflicts: any[] }>(`/api/admin/workshops.conflicts?${params}`)
+      for (const c of data.conflicts) {
+        if (!allConflicts.find(x => x.id === c.id)) allConflicts.push(c)
+      }
+    } catch { /* ignore */ }
+  }
+  conflicts.value = allConflicts
 }
 
 function formatDate(d: string) {
@@ -632,25 +729,33 @@ function formatDate(d: string) {
   return new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-watch(() => [form.conference_room_id, form.time_start, form.time_end], () => checkConflicts())
-watch(() => form.dateRanges.map(r => `${r.start}-${r.end}`).join(','), () => checkConflicts())
+watch(() => form.conference_room_id, () => checkConflicts())
+watch(() => JSON.stringify(form.schedules), () => checkConflicts())
 
 const summary = computed(() => {
   const title = form.title
 
-  const filled = form.dateRanges.filter(r => r.start && r.end)
-  const dates = filled.length > 0 ? filled.map(r => `${fmt(r.start)} – ${fmt(r.end)}`).join(', ') : null
+  const filled = form.schedules.filter(s => s.date_start && s.date_end)
+  const dates = filled.length > 0
+    ? filled.map(s => `${fmtDateShort(s.date_start)} – ${fmtDateShort(s.date_end)}`).join(', ')
+    : null
 
   let duration = '—'
   if (filled.length > 0) {
-    const totalDays = filled.reduce((sum, r) => {
-      const s = new Date(r.start)
-      const e = new Date(r.end)
-      if (e < s) return sum
-      return sum + Math.round((e.getTime() - s.getTime()) / 86400000) + 1
+    const totalDays = filled.reduce((sum, s) => {
+      const sd = new Date(s.date_start)
+      const ed = new Date(s.date_end)
+      if (ed < sd) return sum
+      return sum + Math.round((ed.getTime() - sd.getTime()) / 86400000) + 1
     }, 0)
     if (totalDays > 0) duration = `${totalDays} day${totalDays > 1 ? 's' : ''}`
   }
+
+  const times = filled
+    .filter(s => s.time_start && s.time_end)
+    .map(s => `${s.time_start}–${s.time_end}`)
+    .join(', ')
+  const timeLabel = times || null
 
   const room = selectedRoom.value ? `${selectedRoom.value.name} · ${selectedRoom.value.venue_name}` : null
   const trainer = users.value?.find(u => u.id === form.facilitator_id)?.name || null
@@ -663,7 +768,7 @@ const summary = computed(() => {
   const cap = `${form.max_capacity} participants`
   const progSummary = programs.value.map(p => ({ key: p._key, name: programTitle(p.program_id) || 'Select a program', trainer: users.value?.find(u => u.id === p.trainer_id)?.name || '—' }))
 
-  return { title, dates, duration, room, trainer, facilitator, client, capacity: cap, programs: progSummary }
+  return { title, dates, duration, timeLabel, room, trainer, facilitator, client, capacity: cap, programs: progSummary }
 })
 
 function programTitle(id: string | null) {
@@ -698,22 +803,29 @@ async function save(publishStatus: string) {
       .filter(p => p.program_id)
       .map(p => ({ program_id: p.program_id!, trainer_id: p.trainer_id }))
 
-    const ds = form.dateRanges.filter(r => r.start).map(r => r.start).sort()[0]
-    const de = form.dateRanges.filter(r => r.end).map(r => r.end).sort().slice(-1)[0]
+    const filledSchedules = form.schedules.filter(s => s.date_start && s.date_end)
+    const ds = filledSchedules.map(s => s.date_start).sort()[0]
+    const de = filledSchedules.map(s => s.date_end).sort().slice(-1)[0]
+
+    const schedulePayload = filledSchedules.map(s => ({
+      date_start: s.date_start,
+      date_end: s.date_end,
+      time_start: s.time_start || null,
+      time_end: s.time_end || null,
+    }))
 
     await createWorkshop({
       title: form.title,
       description: form.description || null,
-      date_start: typeof ds === 'string' ? ds : (ds as Date).toISOString().slice(0, 10),
-      date_end: typeof de === 'string' ? de : (de as Date).toISOString().slice(0, 10),
-      time_start: form.time_start || null,
-      time_end: form.time_end || null,
+      date_start: ds,
+      date_end: de,
       conference_room_id: form.conference_room_id,
       client_id: form.client_id,
       facilitator_id: form.facilitator_id,
       status: status.value as any,
       programs: programLinks,
-    })
+      schedules: schedulePayload,
+    } as any)
     snackbar.value = { show: true, text: status.value === 'published' ? 'Workshop published!' : 'Workshop saved as draft.', color: 'success' }
     setTimeout(() => router.push('/manage/workshops'), 1200)
   } catch (err: any) {

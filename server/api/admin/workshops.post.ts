@@ -11,8 +11,6 @@ export default defineEventHandler(async (event): Promise<Workshop> => {
       description: body.description || null,
       date_start: body.date_start,
       date_end: body.date_end,
-      time_start: body.time_start || null,
-      time_end: body.time_end || null,
       conference_room_id: body.conference_room_id || null,
       facilitator_id: body.facilitator_id || null,
       client_id: body.client_id || null,
@@ -33,6 +31,20 @@ export default defineEventHandler(async (event): Promise<Workshop> => {
       })))
 
     if (wpError) throw createError({ statusCode: 500, message: wpError.message })
+  }
+
+  if (body.schedules?.length) {
+    const { error: schError } = await supabase
+      .from('workshop_schedules')
+      .insert(body.schedules.map((s: any) => ({
+        workshop_id: data.id,
+        date_start: s.date_start,
+        date_end: s.date_end,
+        time_start: s.time_start || null,
+        time_end: s.time_end || null,
+      })))
+
+    if (schError) throw createError({ statusCode: 500, message: schError.message })
   }
 
   return data

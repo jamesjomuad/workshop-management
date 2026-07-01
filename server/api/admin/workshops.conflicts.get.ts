@@ -17,7 +17,7 @@ export default defineEventHandler(async (event): Promise<{ conflicts: WorkshopWi
 
   let q = supabase
     .from('workshops')
-    .select('*, conference_room:conference_room_id(*), client:client_id(*), workshop_programs(*, program:program_id(*))')
+    .select('*, conference_room:conference_room_id(*), client:client_id(*), workshop_programs(*, program:program_id(*)), schedules:workshop_schedules(*)')
     .eq('conference_room_id', venueId)
     .neq('status', 'cancelled')
     .lte('date_start', dateEnd)
@@ -38,8 +38,14 @@ export default defineEventHandler(async (event): Promise<{ conflicts: WorkshopWi
   }
 
   const overlapping = candidates.filter((w) => {
-    if (!w.time_start || !w.time_end) return true
-    return timeStart < w.time_end && timeEnd > w.time_start
+    const schedules = w.schedules ?? []
+    if (schedules.length === 0) return true
+    return schedules.some((s) => {
+      const sOverlap = s.date_start <= dateEnd && s.date_end >= dateStart
+      if (!sOverlap) return false
+      if (!s.time_start || !s.time_end) return true
+      return timeStart < s.time_end && timeEnd > s.time_start
+    })
   })
 
   return { conflicts: overlapping }

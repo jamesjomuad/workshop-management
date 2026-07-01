@@ -114,14 +114,22 @@ export interface Workshop {
   description: string | null
   date_start: string
   date_end: string
-  time_start: string | null
-  time_end: string | null
   conference_room_id: string | null
   facilitator_id: string | null
   client_id: string | null
   status: WorkshopStatus
   created_at: string
   updated_at: string
+}
+
+export interface WorkshopSchedule {
+  id: string
+  workshop_id: string
+  date_start: string
+  date_end: string
+  time_start: string | null
+  time_end: string | null
+  created_at: string
 }
 
 export interface WorkshopProgramLink {
@@ -136,6 +144,7 @@ export interface WorkshopWithRelations extends Workshop {
   venue?: ConferenceRoom
   client?: Company
   workshop_programs?: WorkshopProgramLink[]
+  schedules?: WorkshopSchedule[]
 }
 
 export interface Program {

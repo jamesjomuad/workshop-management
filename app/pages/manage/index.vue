@@ -22,7 +22,7 @@
             <v-card-title class="text-h6">Schedule</v-card-title>
             <v-card-subtitle>{{ headerTitle }}</v-card-subtitle>
             <template #append>
-              <v-btn variant="text" size="small" color="primary" to="/manage/calendar">View full calendar</v-btn>
+              <v-btn variant="text" size="small" color="primary" to="/manage/workshops">View all workshops</v-btn>
             </template>
           </v-card-item>
           <v-divider />

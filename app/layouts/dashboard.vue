@@ -53,7 +53,6 @@ onUnmounted(() => window.removeEventListener('resize', onResize))
 const pageTitle = computed(() => {
   const map: Record<string, string> = {
     '/manage': 'Dashboard',
-    '/manage/calendar': 'Calendar',
     '/manage/users': 'Users',
     '/manage/settings': 'Settings',
     '/manage/venues': 'Venues',

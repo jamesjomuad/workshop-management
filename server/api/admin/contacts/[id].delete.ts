@@ -3,7 +3,7 @@ export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id')
   const { error } = await supabase
     .from('contacts')
-    .delete()
+    .update({ deleted_at: new Date().toISOString() })
     .eq('id', id)
   if (error) throw createError({ statusCode: 500, message: error.message })
   return { success: true }

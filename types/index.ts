@@ -187,7 +187,7 @@ export interface Attendance {
 
 export interface Contact {
   id: string
-  company_id: string
+  company_id: string | null
   first_name: string
   last_name: string
   email: string | null
@@ -195,6 +195,7 @@ export interface Contact {
   position: string | null
   notes: string | null
   company_name?: string
+  deleted_at: string | null
   created_at: string
   updated_at: string
 }

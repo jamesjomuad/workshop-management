@@ -14,6 +14,7 @@ export default defineEventHandler(async (event): Promise<Contact> => {
       phone: body.phone || null,
       position: body.position || null,
       notes: body.notes || null,
+      deleted_at: body.deleted_at,
       updated_at: new Date().toISOString(),
     })
     .eq('id', id)

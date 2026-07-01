@@ -6,8 +6,19 @@
         <div class="text-caption text-medium-emphasis mt-1">{{ companies?.length ?? 0 }} companies · {{ contacts?.length ?? 0 }} people</div>
       </div>
       <v-spacer />
-      <v-btn
+      <v-chip
         v-if="tab === 'contacts'"
+        variant="outlined"
+        size="small"
+        class="me-2"
+        :color="showArchived ? 'warning' : undefined"
+        @click="showArchived = !showArchived"
+      >
+        <v-icon start size="16">{{ showArchived ? 'mdi-archive-check' : 'mdi-archive' }}</v-icon>
+        {{ showArchived ? 'Archived' : 'Archived' }}
+      </v-chip>
+      <v-btn
+        v-if="tab === 'contacts' && !showArchived"
         color="primary"
         prepend-icon="mdi-plus"
         to="/manage/contacts/new"
@@ -49,10 +60,12 @@
       >
         <template #item.full_name="{ item }">
           <div class="d-flex align-center ga-2">
-            <v-avatar size="32" color="primary" variant="tonal">
+            <v-avatar size="32" :color="item.deleted_at ? 'grey' : 'primary'" variant="tonal">
               <span class="text-body-2 font-weight-medium">{{ initials(item) }}</span>
             </v-avatar>
-            <span>{{ item.first_name }} {{ item.last_name }}</span>
+            <span :class="{ 'text-decoration-line-through text-medium-emphasis': item.deleted_at }">
+              {{ item.first_name }} {{ item.last_name }}
+            </span>
           </div>
         </template>
         <template #item.company_name="{ value }">
@@ -61,10 +74,27 @@
         </template>
         <template #item.actions="{ item }">
           <div class="d-flex ga-1">
-            <v-btn icon variant="text" size="small" :to="`/manage/contacts/${item.id}`">
+            <v-btn v-if="!item.deleted_at" icon variant="text" size="small" :to="`/manage/contacts/${item.id}`">
               <v-icon size="18">mdi-pencil</v-icon>
             </v-btn>
-            <v-btn icon variant="text" size="small" color="error" @click="confirmDeleteContact(item)">
+            <v-btn
+              v-if="item.deleted_at"
+              icon
+              variant="text"
+              size="small"
+              color="success"
+              @click="handleRestore(item)"
+            >
+              <v-icon size="18">mdi-restore</v-icon>
+            </v-btn>
+            <v-btn
+              v-if="!item.deleted_at"
+              icon
+              variant="text"
+              size="small"
+              color="error"
+              @click="confirmDeleteContact(item)"
+            >
               <v-icon size="18">mdi-delete</v-icon>
             </v-btn>
           </div>
@@ -129,14 +159,26 @@
                 class="contact-subtable"
               >
                 <template #item.full_name="{ item: c }">
-                  {{ c.first_name }} {{ c.last_name }}
+                  <span :class="{ 'text-decoration-line-through text-medium-emphasis': c.deleted_at }">
+                    {{ c.first_name }} {{ c.last_name }}
+                  </span>
                 </template>
                 <template #item.actions="{ item: c }">
                   <div class="d-flex ga-1">
-                    <v-btn icon variant="text" size="x-small" :to="`/manage/contacts/${c.id}`">
+                    <v-btn v-if="!c.deleted_at" icon variant="text" size="x-small" :to="`/manage/contacts/${c.id}`">
                       <v-icon size="16">mdi-pencil</v-icon>
                     </v-btn>
-                    <v-btn icon variant="text" size="x-small" color="error" @click="confirmDeleteContact(c)">
+                    <v-btn
+                      v-if="c.deleted_at"
+                      icon
+                      variant="text"
+                      size="x-small"
+                      color="success"
+                      @click="handleRestore(c)"
+                    >
+                      <v-icon size="16">mdi-restore</v-icon>
+                    </v-btn>
+                    <v-btn v-if="!c.deleted_at" icon variant="text" size="x-small" color="error" @click="confirmDeleteContact(c)">
                       <v-icon size="16">mdi-delete</v-icon>
                     </v-btn>
                   </div>
@@ -194,7 +236,7 @@
         <v-card-actions class="pa-4">
           <v-spacer />
           <v-btn variant="outlined" @click="deleteDialog = false">Cancel</v-btn>
-          <v-btn color="error" :loading="saving" @click="confirmDelete">Delete</v-btn>
+          <v-btn color="error" :loading="saving" @click="confirmDelete">Archive</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -209,7 +251,8 @@ definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 import type { Company, Contact } from '~/types'
 
 const { companies, pending: coPending, refresh: refreshCompanies, createCompany, updateCompany, deleteCompany } = useCompanies()
-const { contacts, pending: ctPending, refresh: refreshContacts, deleteContact } = useContacts()
+const showArchived = ref(false)
+const { contacts, pending: ctPending, refresh: refreshContacts, deleteContact, restoreContact } = useContacts({ archived: computed(() => showArchived.value) })
 
 const loading = computed(() => coPending.value || ctPending.value)
 const tab = ref('contacts')
@@ -377,7 +420,7 @@ async function saveCompany() {
 
 function confirmDeleteContact(item: Contact) {
   deletingItem.value = item
-  deleteMessage.value = `Delete ${item.first_name} ${item.last_name}?`
+  deleteMessage.value = `Archive "${item.first_name} ${item.last_name}"? They can be restored later.`
   deleteDialog.value = true
 }
 
@@ -393,15 +436,25 @@ async function confirmDelete() {
   try {
     if ('first_name' in deletingItem.value) {
       await deleteContact(deletingItem.value.id)
+      snackbar.value = { show: true, text: 'Contact archived', color: 'success' }
     } else {
       await deleteCompany(deletingItem.value.id)
+      snackbar.value = { show: true, text: 'Deleted', color: 'success' }
     }
-    snackbar.value = { show: true, text: 'Deleted', color: 'success' }
     deleteDialog.value = false
   } catch (err: any) {
     snackbar.value = { show: true, text: err.message, color: 'error' }
   } finally {
     saving.value = false
+  }
+}
+
+async function handleRestore(item: Contact) {
+  try {
+    await restoreContact(item.id)
+    snackbar.value = { show: true, text: 'Contact restored', color: 'success' }
+  } catch (err: any) {
+    snackbar.value = { show: true, text: err.message, color: 'error' }
   }
 }
 

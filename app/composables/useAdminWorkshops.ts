@@ -1,8 +1,8 @@
-import type { Workshop, WorkshopWithRelations, ConferenceRoom, Company } from '~/types'
+import type { Workshop, WorkshopWithRelations, Venue, Company } from '~/types'
 
 export function useAdminWorkshops() {
   const { data: workshops, pending, error, refresh } = useFetch<WorkshopWithRelations[]>('/api/admin/workshops')
-  const { data: venues } = useFetch<ConferenceRoom[]>('/api/admin/rooms')
+  const { data: venues } = useFetch<Venue[]>('/api/admin/rooms')
   const { data: companies } = useFetch<Company[]>('/api/admin/companies')
 
   async function createWorkshop(payload: Partial<Workshop>) {

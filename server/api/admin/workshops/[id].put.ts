@@ -16,6 +16,7 @@ export default defineEventHandler(async (event): Promise<Workshop> => {
       facilitator_id: body.facilitator_id || null,
       client_id: body.client_id || null,
       status: body.status || 'draft',
+      updated_at: new Date().toISOString(),
     })
     .eq('id', id)
     .select()

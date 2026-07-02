@@ -1,7 +1,7 @@
-import type { Venue, EventType, Testimonial } from '~/types'
+import type { MarketplaceVenue, EventType, Testimonial } from '~/types'
 
 export default defineEventHandler(() => {
-  const venues: Venue[] = [
+  const venues: MarketplaceVenue[] = [
     {
       id: 1,
       name: 'Grand Ballroom',

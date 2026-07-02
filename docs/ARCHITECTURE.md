@@ -21,7 +21,7 @@ The project has **two distinct functional domains** sharing the same codebase:
 | Auth | Supabase Auth | Email/password, session management |
 | Authorization | Supabase RLS | Row-level security policies |
 | Dark Mode | `@nuxtjs/color-mode` | CSS class toggle on `<html>` |
-| Charts | Chart.js + vue-chartjs | Dashboard visualizations (imported but unused in code) |
+| Charts | Chart.js + vue-chartjs | Installed but unused in code |
 
 ## Directory Structure
 
@@ -47,11 +47,12 @@ workshop/
 │   │       ├── index.vue         # Dashboard overview
 │   │       ├── venues/           # Venue CRUD (list, new, edit)
 │   │       ├── workshops/        # Workshop CRUD (list, new, edit)
-│   │       ├── contacts.vue      # Contacts & Companies (tabs)
-│   │       ├── programs.vue      # Programs & Sessions (hardcoded demo)
-│   │       ├── enrollments.vue   # Enrollments & Attendance (hardcoded demo)
-│   │       ├── users.vue         # User list
-│   │       └── settings.vue      # Profile & app settings (hardcoded form)
+  │   │       ├── contacts/         # Contacts & Companies (tabs)
+  │   │       ├── companies/new.vue # Add company dialog entry
+  │   │       ├── programs/         # Programs & Topics CRUD
+  │   │       ├── enrollments.vue   # Enrollments & Attendance (hardcoded demo)
+  │   │       ├── users.vue         # User list (admin only)
+  │   │       └── settings.vue      # Profile & app settings (hardcoded form)
 │   └── types/                    # App-specific types (empty directory)
 ├── server/                       # Nitro server (backend)
 │   ├── api/                      # File-based API endpoints
@@ -60,21 +61,28 @@ workshop/
 │   │   ├── stats.get.ts          # Mock admin stats
 │   │   ├── users.get.ts          # List Supabase auth users
 │   │   ├── invite.post.ts        # Invite user via email
-│   │   └── admin/                # Live Supabase admin endpoints
-│   │       ├── rooms.get/post/   # Venue CRUD
-│   │       ├── rooms/[id].put/delete/
-│   │       ├── workshops.get/post/
-│   │       ├── workshops/[id].put/delete/
-│   │       ├── companies.get/post/
-│   │       ├── companies/[id].put/delete/
-│   │       ├── contacts.get/post/
-│   │       ├── contacts/[id].put/delete/
-│   │       └── stats.get.ts      # Aggregate counts from DB
+  │   │       └── admin/                # Live Supabase admin endpoints
+  │   │       ├── rooms.get/post/   # Venue CRUD
+  │   │       ├── rooms/[id].put/delete/
+  │   │       ├── workshops.get/post/
+  │   │       ├── workshops/[id].put/delete/
+  │   │       ├── workshops.conflicts.get.ts
+  │   │       ├── companies.get/post/
+  │   │       ├── companies/[id].put/delete/
+  │   │       ├── contacts.get/post/
+  │   │       ├── contacts/[id].put/delete/
+  │   │       ├── programs.get/post/
+  │   │       ├── programs/[id].put/delete/
+  │   │       ├── programs.reorder.post.ts
+  │   │       ├── topics.post/
+  │   │       ├── topics/[id].put/delete/
+  │   │       ├── topics.reorder.post.ts
+  │   │       └── stats.get.ts      # Aggregate counts from DB
 │   └── utils/
 │       └── supabase.ts           # useAdminClient() helper
 ├── supabase/                     # Supabase configuration
 │   ├── config.toml               # Local dev config (ports, auth, storage)
-│   └── migrations/               # SQL migrations (4 files)
+  │   └── migrations/               # SQL migrations (setup + one per table + seed)
 ├── types/                        # TypeScript type definitions
 │   ├── index.ts                  # 18 manual interfaces
 │   └── database.types.ts         # Stub — not auto-generated
@@ -133,7 +141,17 @@ Each HTTP method + path combination is a single file:
 - `POST /api/admin/contacts` — Create contact
 - `PUT /api/admin/contacts/:id` — Update contact
 - `DELETE /api/admin/contacts/:id` — Delete contact
-- `GET /api/admin/stats` — Aggregate counts (rooms, workshops, programs, enrollments)
+- `GET /api/admin/stats` — Aggregate counts (venues, workshops, programs, contacts)
+- `GET /api/admin/programs` — List programs
+- `POST /api/admin/programs` — Create program
+- `PUT /api/admin/programs/:id` — Update program
+- `DELETE /api/admin/programs/:id` — Soft-delete program
+- `POST /api/admin/programs/reorder` — Reorder programs
+- `POST /api/admin/topics` — Create program topic
+- `PUT /api/admin/topics/:id` — Update program topic
+- `DELETE /api/admin/topics/:id` — Delete program topic
+- `POST /api/admin/topics/reorder` — Reorder topics
+- `GET /api/admin/workshops.conflicts` — Detect venue scheduling conflicts
 
 ### Error Handling
 
@@ -168,6 +186,7 @@ useCompanies()     → companies, createCompany, updateCompany, deleteCompany
 useContacts()      → contacts, createContact, updateContact, deleteContact
 useUsers()         → users, activeUsers, inactiveUsers
 useStats()         → stats, statList
+useAdminPrograms()  → programs, createProgram, updateProgram, deleteProgram, restoreProgram, reorderPrograms, createTopic, updateTopic, deleteTopic, reorderTopics
 ```
 
 ### Component Tree
@@ -195,19 +214,20 @@ app.vue
     ├── SidebarNav (navigation list with logout)
     ├── v-navigation-drawer
     └── NuxtPage
-        ├── manage/index.vue (hardcoded dashboard)
+        ├── manage/index.vue (live workshops overview)
         ├── manage/venues/* (live supabase)
         ├── manage/workshops/* (live supabase)
-        ├── manage/contacts.vue (live supabase)
-        ├── manage/programs.vue (hardcoded demo)
+        ├── manage/contacts/* (live supabase)
+        ├── manage/companies/new.vue (live supabase)
+        ├── manage/programs/* (live supabase)
         ├── manage/enrollments.vue (hardcoded demo)
-        ├── manage/users.vue (live supabase)
+        ├── manage/users.vue (live supabase, admin only)
         └── manage/settings.vue (hardcoded form)
 ```
 
 ### State Management
 
-Pinia is installed via `@pinia/nuxt` but is **not directly used** — all state management is done through Nuxt's `useFetch` composable and local `ref()`/`reactive()` state. The stores are auto-registered but empty (no explicit store definitions found).
+Pinia is installed via `@pinia/nuxt` but is **not directly used** — state management is done through Nuxt's `useFetch` composable for reads, `$fetch` for mutations, and local `ref()`/`reactive()` state. The stores are auto-registered but empty (no explicit store definitions found).
 
 ### Routing & Middleware Flow
 
@@ -247,18 +267,33 @@ user_roles ──────────► companies
     │  (FK: conference     conference_room_id FK,
     │   _room_id)          facilitator_id FK,
     │         │            client_id FK, status)
+    │         │               │
     │         ▼               │
     │      venues             │ (FK: workshop_id)
     │      (id, name,         ▼
-    │       venue_name,   workshop_programs
-    │       capacity,     (id, workshop_id FK,
-    │       status)        program_id FK, trainer_id FK)
-    │      ▲                  │
-    │      │                  │ (FK: workshop_program_id)
-    │      │                  ▼
-    │      │              sessions
-    │      │              (id, title, day_number,
-    │      │               time_start, time_end, status)
+    │       type,        workshop_schedules
+    │       city)        (id, workshop_id FK,
+    │                    date_start, date_end,
+    │                    time_start, time_end)
+    │                         │
+    │                         │ (FK: workshop_id)
+    │                         ▼
+    │                   workshop_programs
+    │                   (id, workshop_id FK,
+    │                    program_id FK, trainer_id FK)
+    │                         │
+    │                         │ (FK: program_id)
+    │                         ▼
+    │      ├────────────► programs
+    │      │              (id, title, description,
+    │      │               content, slug, order_index,
+    │      │               status, created_by FK)
+    │      │                   │
+    │      │                   │ (FK: program_id)
+    │      │                   ▼
+    │      │              program_topics
+    │      │              (id, program_id FK, title,
+    │      │               content, status, sort_order)
     │      │
     │      ├────────────────► enrollments
     │      │                 (id, workshop_id FK,
@@ -268,7 +303,7 @@ user_roles ──────────► companies
     │      │                        │ (FK: enrollment_id)
     │      │                        ▼
     │      │                    attendance
-    │      │                    (id, session_id FK,
+    │      │                    (id, session_id,
     │      │                     enrollment_id FK,
     │      │                     status, marked_by FK)
     │      │
@@ -276,13 +311,9 @@ user_roles ──────────► companies
     │                        (id, company_id FK,
     │                         first_name, last_name,
     │                         email, phone, position)
-    │
-    └──────────────────► programs
-                         (id, title, description,
-                          created_by FK)
 ```
 
-### Tables Summary (10 tables)
+### Tables Summary (11 tables)
 
 | Table | Purpose | Key FK References |
 |-------|---------|-------------------|
@@ -290,33 +321,35 @@ user_roles ──────────► companies
 | `companies` | Client organizations | — |
 | `venues` | Conference rooms at hotels | — |
 | `workshops` | Central event entity | `conference_room_id → venues`, `facilitator_id → user_roles`, `client_id → companies` |
+| `workshop_schedules` | Per-range date/time for a workshop | `workshop_id → workshops` |
 | `programs` | Reusable curriculum definitions | `created_by → user_roles` |
+| `program_topics` | Flattened topics under a program | `program_id → programs` |
 | `workshop_programs` | Junction: program scheduled in workshop | `workshop_id → workshops`, `program_id → programs`, `trainer_id → user_roles` |
-| `sessions` | Individual day/time module within a workshop-program | `workshop_program_id → workshop_programs` |
 | `enrollments` | Tracks trainee participation in a workshop | `workshop_id → workshops`, `trainee_id → user_roles` |
-| `attendance` | Per-session attendance for each enrollment | `session_id → sessions`, `enrollment_id → enrollments`, `marked_by → user_roles` |
+| `attendance` | Per-session attendance for each enrollment | `session_id` (UUID, FK pending Phase 3), `enrollment_id → enrollments`, `marked_by → user_roles` |
 | `contacts` | People at client companies | `company_id → companies` |
 
 ### RLS Policies
 
-All 10 tables have RLS enabled with a `get_user_role()` helper function. The policy pattern varies by sensitivity:
+All 11 tables have RLS enabled with a `get_user_role()` helper function. The policy pattern varies by sensitivity:
 
 | Table | SELECT | INSERT | UPDATE | DELETE |
 |-------|--------|--------|--------|--------|
-| `companies` | All auth | admin/staff | admin/staff | admin only |
+| `companies` | All auth | admin/staff/organizer | admin/staff/organizer | admin only |
 | `user_roles` | Own role or admin | admin only | admin only | admin only |
-| `venues` | All auth | admin/staff | admin/staff | admin only |
-| `workshops` | All auth | admin/staff | admin/staff | admin only |
-| `programs` | All auth | admin/staff/trainer | admin/staff/trainer | admin only |
-| `workshop_programs` | All auth | admin/staff | admin/staff | admin only |
-| `sessions` | All auth | admin/staff/trainer | admin/staff/trainer | admin only |
-| `enrollments` | Own or admin/staff/facilitator | admin/staff | admin/staff | admin only |
-| `attendance` | Own or admin/staff/trainer/facilitator | trainer/facilitator/admin/staff | trainer/facilitator/admin/staff | admin only |
+| `venues` | All auth | admin/staff/organizer | admin/staff/organizer | admin only |
+| `workshops` | All auth | admin/staff/organizer | admin/staff/organizer | admin only |
+| `workshop_schedules` | All auth | admin/staff/organizer | admin/staff/organizer | admin only |
+| `programs` | All auth | admin/staff/trainer/organizer | admin/staff/trainer/organizer | admin only |
+| `program_topics` | All auth | admin/staff/trainer/organizer | admin/staff/trainer/organizer | admin only |
+| `workshop_programs` | All auth | admin/staff/organizer | admin/staff/organizer | admin only |
+| `enrollments` | Own or admin/staff/facilitator/organizer | admin/staff/organizer | admin/staff/organizer | admin only |
+| `attendance` | Own or admin/staff/trainer/facilitator/organizer | trainer/facilitator/admin/staff/organizer | trainer/facilitator/admin/staff/organizer | admin only |
 | `contacts` | All auth | admin/staff | admin/staff | admin only |
 
 ### Indexes
 
-15 indexes created on foreign keys and frequently queried columns: `user_roles(user_id, role)`, `workshops(status, date_start, conference_room_id)`, `workshop_programs(workshop_id, program_id)`, `sessions(workshop_program_id)`, `enrollments(workshop_id, trainee_id)`, `attendance(session_id, enrollment_id)`, `contacts(company_id)`.
+Indexes on foreign keys and frequently queried columns: `user_roles(user_id, role)`, `companies(slug)`, `contacts(company_id)`, `venues(type, city)`, `workshops(status, date_start, conference_room_id)`, `workshop_schedules(workshop_id, date_start, date_end)`, `workshop_programs(workshop_id, program_id)`, `programs(order_index, slug)`, `program_topics(program_id)`, `enrollments(workshop_id, trainee_id)`, `attendance(session_id, enrollment_id)`.
 
 ## Authentication and Authorization Flow
 
@@ -429,6 +462,7 @@ Response → Client renders two tabs with expandable company rows
 - `SUPABASE_URL` — Supabase project URL
 - `SUPABASE_KEY` — Anon/publishable key (client-side)
 - `SUPABASE_SERVICE_ROLE_KEY` — Service role key (server-side only)
+- `AUTH_REDIRECT_URL` — Optional base URL for invite/password-reset redirects (defaults to request origin + `/confirm`)
 
 ### Build
 ```bash
@@ -450,7 +484,5 @@ Or via Supabase Dashboard SQL editor. Migrations are in `supabase/migrations/` a
 - The `about.vue` page is a placeholder with minimal content
 - `chart.js` and `vue-chartjs` are installed as dependencies but not imported in any component
 - Pinia is installed but no explicit stores were found — Nuxt auto-registers it
-- `manage/programs.vue` and `manage/enrollments.vue` have fully functional UIs but use hardcoded data arrays, not API endpoints
-- The `manage/venues/index.vue` `hasWorkshop()` function always returns `false`
-- The `manage/workshops/index.vue` `dayCount` is hardcoded to `3` instead of computed from dates
+- `manage/enrollments.vue` has a fully functional UI but uses hardcoded data arrays, not API endpoints
 - `manage/settings.vue` profile form has hardcoded values

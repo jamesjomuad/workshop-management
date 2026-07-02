@@ -73,10 +73,13 @@
                           />
                         </template>
                         <v-date-picker
-                          v-model="s.date_start"
+                          :model-value="s.date_start"
+                          @update:model-value="val => {
+                            s.date_start = val ? val.getFullYear() + '-' + String(val.getMonth() + 1).padStart(2, '0') + '-' + String(val.getDate()).padStart(2, '0') : '';
+                            if (s.date_end && s.date_start > s.date_end) s.date_end = s.date_start;
+                          }"
                           :min="today"
                           color="primary"
-                          @update:model-value="() => { if (s.date_end && s.date_start > s.date_end) s.date_end = s.date_start }"
                         />
                       </v-menu>
                       <v-icon class="flex-shrink-0">mdi-chevron-right</v-icon>
@@ -96,7 +99,8 @@
                           />
                         </template>
                         <v-date-picker
-                          v-model="s.date_end"
+                          :model-value="s.date_end"
+                          @update:model-value="val => s.date_end = val ? val.getFullYear() + '-' + String(val.getMonth() + 1).padStart(2, '0') + '-' + String(val.getDate()).padStart(2, '0') : ''"
                           :min="s.date_start || today"
                           color="primary"
                         />
@@ -186,15 +190,14 @@
                         <div class="d-flex justify-space-between align-start mb-1">
                           <div class="text-caption text-medium-emphasis font-family-mono">
                             <v-icon size="14" class="me-1">mdi-hotel</v-icon>
-                            {{ r.venue_name }}
+                            {{ r.type }}
                           </div>
                           <v-chip size="x-small" color="success" variant="tonal">Available</v-chip>
                         </div>
                         <div class="text-body-2 font-weight-bold">{{ r.name }}</div>
-                        <div class="text-caption text-medium-emphasis">
-                          <v-icon size="14" class="me-1">mdi-account-group</v-icon>
-                          {{ r.capacity }} pax
-                          <span v-if="r.floor"> · {{ r.floor }}</span>
+                        <div v-if="r.city" class="text-caption text-medium-emphasis">
+                          <v-icon size="14" class="me-1">mdi-map-marker</v-icon>
+                          {{ r.city }}
                         </div>
                       </v-sheet>
                     </v-col>
@@ -651,6 +654,7 @@ const form = reactive({
 const status = ref('draft')
 const savingDraft = ref(false)
 const savingPublish = ref(false)
+const isSaving = ref(false)
 const formRef = ref<VForm>()
 const conflicts = ref<any[]>([])
 
@@ -713,7 +717,13 @@ function removeSchedule(i: number) {
 
 function fmtDateShort(d: any) {
   if (!d) return ''
-  const dt = d instanceof Date ? d : new Date(d + 'T00:00:00')
+  let dt: Date
+  if (d instanceof Date) {
+    dt = d
+  } else {
+    const [y, m, day] = String(d).split('-').map(Number)
+    dt = new Date(y, m - 1, day)
+  }
   return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
@@ -744,7 +754,8 @@ async function checkConflicts() {
 
 function formatDateStr(d: string) {
   if (!d) return ''
-  return new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  const [y, m, day] = d.split('-').map(Number)
+  return new Date(y, m - 1, day).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
 watch(() => form.conference_room_id, () => checkConflicts())
@@ -767,7 +778,7 @@ const summary = computed(() => {
     if (totalDays > 0) duration = `${totalDays} day${totalDays > 1 ? 's' : ''}`
   }
 
-  const room = selectedRoom.value ? `${selectedRoom.value.name} · ${selectedRoom.value.venue_name}` : null
+  const room = selectedRoom.value ? `${selectedRoom.value.name}${selectedRoom.value.city ? ' · ' + selectedRoom.value.city : ''}` : null
   const trainer = users.value?.find(u => u.id === form.facilitator_id)?.name || null
   const facilitator = users.value?.find(u => u.id === form.facilitator_assistant)?.name || null
 
@@ -788,14 +799,15 @@ function programTitle(id: string | null) {
 
 function fmt(d: string) {
   if (!d) return ''
-  const dt = new Date(d + 'T00:00:00')
-  return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  const [y, m, day] = d.split('-').map(Number)
+  return new Date(y, m - 1, day).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
 async function save(publishStatus: string) {
   status.value = publishStatus
   const loading = publishStatus === 'published' ? savingPublish : savingDraft
   loading.value = true
+  isSaving.value = true
   try {
     if (!formRef.value) throw new Error('Form not found')
     const { valid } = await formRef.value.validate()
@@ -814,7 +826,11 @@ async function save(publishStatus: string) {
       .map(p => ({ program_id: p.program_id!, trainer_id: p.trainer_id }))
 
     const filledSchedules = form.schedules.filter(s => s.date_start && s.date_end)
-    const toStr = (d: any) => d instanceof Date ? d.toISOString().slice(0, 10) : d
+    const toStr = (d: any) => {
+      if (!d) return ''
+      if (d instanceof Date) return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')
+      return String(d)
+    }
     const ds = filledSchedules.map(s => toStr(s.date_start)).sort()[0]
     const de = filledSchedules.map(s => toStr(s.date_end)).sort().slice(-1)[0]
 
@@ -843,11 +859,12 @@ async function save(publishStatus: string) {
     snackbar.value = { show: true, text: err.message || err.toString(), color: 'error' }
   } finally {
     loading.value = false
+    isSaving.value = false
   }
 }
 
 watch(workshop, (w) => {
-  if (w) {
+  if (w && !isSaving.value) {
     form.title = w.title
     form.description = w.description ?? ''
     form.conference_room_id = w.conference_room_id
@@ -857,13 +874,13 @@ watch(workshop, (w) => {
 
     if (w.schedules?.length) {
       form.schedules = w.schedules.map(s => ({
-        date_start: s.date_start ? new Date(s.date_start + 'T00:00:00') : '',
-        date_end: s.date_end ? new Date(s.date_end + 'T00:00:00') : '',
+        date_start: s.date_start || '',
+        date_end: s.date_end || '',
         time_start: s.time_start || '08:00',
         time_end: s.time_end || '17:00',
       }))
     } else if (w.date_start) {
-      form.schedules = [{ date_start: new Date(w.date_start + 'T00:00:00'), date_end: new Date((w.date_end || w.date_start) + 'T00:00:00'), time_start: '08:00', time_end: '17:00' }]
+      form.schedules = [{ date_start: w.date_start, date_end: w.date_end || w.date_start, time_start: '08:00', time_end: '17:00' }]
     } else {
       form.schedules = [{ date_start: '', date_end: '', time_start: '08:00', time_end: '17:00' }]
     }

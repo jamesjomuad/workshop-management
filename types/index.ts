@@ -27,7 +27,41 @@ export interface LoginCredentials {
   password: string
 }
 
+export type VenueType = 'hotel' | 'convention_center' | 'office' | 'other'
+
 export interface Venue {
+  id: string
+  name: string
+  type: VenueType
+
+  // Location
+  address: string | null
+  city: string | null
+  province: string | null
+  country: string | null
+  postal_code: string | null
+  latitude: number | null
+  longitude: number | null
+
+  // Contact
+  contact_person: string | null
+  contact_phone: string | null
+  contact_email: string | null
+
+  // Media
+  logo_url: string | null
+  cover_image_url: string | null
+
+  // Metadata
+  notes: string | null
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export type ConferenceRoom = Venue
+
+export interface MarketplaceVenue {
   id: number
   name: string
   hotel: string
@@ -93,19 +127,6 @@ export interface Company {
   updated_at: string
 }
 
-export interface ConferenceRoom {
-  id: string
-  name: string
-  venue_name: string
-  venue_address: string | null
-  floor: string | null
-  capacity: number
-  notes: string | null
-  status: 'available' | 'booked' | 'in_use'
-  created_at: string
-  updated_at: string
-}
-
 export type WorkshopStatus = 'draft' | 'published' | 'ongoing' | 'completed' | 'cancelled'
 
 export interface Workshop {
@@ -141,7 +162,7 @@ export interface WorkshopProgramLink {
 }
 
 export interface WorkshopWithRelations extends Workshop {
-  venue?: ConferenceRoom
+  conference_room?: Venue
   client?: Company
   workshop_programs?: WorkshopProgramLink[]
   schedules?: WorkshopSchedule[]
@@ -209,4 +230,27 @@ export interface Contact {
   deleted_at: string | null
   created_at: string
   updated_at: string
+}
+
+export interface Category {
+  id: string
+  name: string
+  icon: string
+  color: string
+}
+
+export interface MarketplaceWorkshop {
+  id: number
+  title: string
+  host: string
+  hostAvatar: string
+  category: string
+  price: number
+  rating: number
+  reviewCount: number
+  spotsLeft: number
+  totalSpots: number
+  image: string
+  date: string
+  time: string
 }

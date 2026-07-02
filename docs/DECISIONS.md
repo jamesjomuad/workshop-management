@@ -6,9 +6,9 @@ This file records inferred and explicit architectural decisions made in this pro
 
 ## AD-1: Workshop-Centered Data Model
 
-**Date:** 2026-06-27 (migration timestamp)  
+**Date:** 2026-06-27 (original migration timestamp)  
 **Status:** Confirmed  
-**Source:** `docs/plans/training-management-system-plan.md`, `supabase/migrations/20260627000001_training_system_core.sql`
+**Source:** `docs/plans/training-management-system-plan.md`, `supabase/migrations/0000000000000*.sql`
 
 The Workshop is the central entity. Everything (programs, sessions, enrollments, attendance) hangs off the workshop. Conference rooms are optional details attached to workshops, not the other way around.
 
@@ -18,11 +18,11 @@ The Workshop is the central entity. Everything (programs, sessions, enrollments,
 
 ## AD-2: Supabase RLS as Primary Authorization Layer
 
-**Date:** 2026-06-27 (migration timestamp)  
+**Date:** 2026-06-27 (original migration timestamp)  
 **Status:** Confirmed  
-**Source:** All RLS policies in `20260627000001_training_system_core.sql`
+**Source:** All RLS policies in `supabase/migrations/0000000000000*.sql`
 
-Authorization is enforced at the database level via Row-Level Security policies on all 10 tables. The `get_user_role()` helper function reads from `user_roles` to determine permissions per operation.
+Authorization is enforced at the database level via Row-Level Security policies on all 11 tables. The `get_user_role()` helper function reads from `user_roles` to determine permissions per operation.
 
 **Rationale:** Keeps authorization logic close to the data, avoids scattering role checks across API handlers, and provides defense in depth even if an API handler is misconfigured.
 
@@ -80,11 +80,11 @@ Pinia is installed via `@pinia/nuxt` but no store definitions exist. All state m
 
 ## AD-7: Conference Rooms Renamed to Venues
 
-**Date:** 2026-06-28 (migration timestamp)  
+**Date:** 2026-06-28 (original migration timestamp)  
 **Status:** Confirmed  
-**Source:** `supabase/migrations/20260628000002_rename_conference_rooms_to_venues.sql`
+**Source:** `supabase/migrations/00000000000001_venues.sql`
 
-The table was originally named `conference_rooms` and renamed to `venues` in a migration. However, the TypeScript type is still called `ConferenceRoom` and the API route prefix is still `/api/admin/rooms`.
+The table was originally named `conference_rooms`; the final schema names it `venues`. The TypeScript type keeps `ConferenceRoom` as an alias of `Venue` and the API route prefix remains `/api/admin/rooms`.
 
 **Rationale:** Likely a mid-development rename. The codebase has not been fully updated to reflect the new naming — types and routes retain the old `ConferenceRoom`/`rooms` naming.
 

@@ -1,18 +1,14 @@
-import { createClient } from '@supabase/supabase-js'
 import type { User } from '~/types'
 
 export default defineEventHandler(async (): Promise<User[]> => {
-  const supabaseAdmin = createClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
+  const supabase = useAdminClient()
 
-  const { data: authData, error: authError } = await supabaseAdmin.auth.admin.listUsers()
+  const { data: authData, error: authError } = await supabase.auth.admin.listUsers()
   if (authError) throw createError({ statusCode: 500, message: authError.message })
 
   const userIds = authData.users.map(u => u.id)
 
-  const { data: roles, error: rolesError } = await supabaseAdmin
+  const { data: roles, error: rolesError } = await supabase
     .from('user_roles')
     .select('id, user_id, role')
     .in('user_id', userIds)
@@ -27,7 +23,7 @@ export default defineEventHandler(async (): Promise<User[]> => {
   for (const userId of toInsert) {
     const authUser = authData.users.find(u => u.id === userId)
     const defaultRole = authUser?.user_metadata?.role || 'trainee'
-    const { data: newRole, error: insertError } = await supabaseAdmin
+    const { data: newRole, error: insertError } = await supabase
       .from('user_roles')
       .insert({ user_id: userId, role: defaultRole })
       .select('id, user_id, role')

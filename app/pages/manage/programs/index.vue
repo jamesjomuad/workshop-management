@@ -184,6 +184,7 @@ const deleting = ref(false)
 
 const activePrograms = ref<ProgramWithRelations[]>([])
 const archivedPrograms = ref<ProgramWithRelations[]>([])
+const sortedPrograms = ref<ProgramWithRelations[]>([])
 
 watch(apiPrograms, (list) => {
   activePrograms.value = list ?? []
@@ -196,18 +197,19 @@ watchEffect(async () => {
   }
 })
 
-const sortedPrograms = computed({
-  get: () => {
-    if (filter.value === 'archived') return archivedPrograms.value
-    const list = activePrograms.value
-    if (filter.value === 'all') return list
-    return list.filter(p => p.status === filter.value)
-  },
-  set: () => {},
-})
+watch([filter, activePrograms, archivedPrograms], () => {
+  if (filter.value === 'archived') {
+    sortedPrograms.value = archivedPrograms.value
+  } else if (filter.value === 'all') {
+    sortedPrograms.value = activePrograms.value
+  } else {
+    sortedPrograms.value = activePrograms.value.filter(p => p.status === filter.value)
+  }
+}, { immediate: true })
 
 async function onReorderPrograms() {
-  const ids = (apiPrograms.value ?? []).map(p => p.id)
+  activePrograms.value = sortedPrograms.value
+  const ids = sortedPrograms.value.map(p => p.id)
   await reorderPrograms(ids)
 }
 

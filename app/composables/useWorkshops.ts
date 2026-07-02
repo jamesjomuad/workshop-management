@@ -1,4 +1,4 @@
-import type { Workshop, Category, Testimonial } from '~/types'
+import type { MarketplaceWorkshop, Category, Testimonial } from '~/types'
 
 export function useWorkshops() {
   const searchQuery = ref('')
@@ -9,7 +9,7 @@ export function useWorkshops() {
     pending,
     error,
     refresh,
-  } = useFetch<{ workshops: Workshop[]; categories: Category[]; testimonials: Testimonial[] }>(
+  } = useFetch<{ workshops: MarketplaceWorkshop[]; categories: Category[]; testimonials: Testimonial[] }>(
     '/api/workshops'
   )
 

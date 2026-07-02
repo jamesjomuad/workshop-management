@@ -159,10 +159,11 @@ const {
 
 const program = computed(() => (programs.value ?? []).find(p => p.id === id))
 
-const localTopics = computed({
-  get: () => program.value?.topics ?? [],
-  set: () => {},
-})
+const localTopics = ref<ProgramTopic[]>([])
+
+watch(() => program.value?.topics, (topics) => {
+  localTopics.value = topics ? [...topics] : []
+}, { immediate: true })
 
 const editTitle = ref('')
 const editDescription = ref('')
@@ -244,7 +245,7 @@ async function onRestore() {
 }
 
 async function onReorderTopics() {
-  const ids = (program.value?.topics ?? []).map(t => t.id)
+  const ids = localTopics.value.map(t => t.id)
   await reorderTopics(ids)
 }
 

@@ -1,17 +1,12 @@
-import { createClient } from '@supabase/supabase-js'
-
 export default defineEventHandler(async (event) => {
-  const supabaseAdmin = createClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
+  const supabase = useAdminClient()
 
   const id = getRouterParam(event, 'id')
   if (!id) throw createError({ statusCode: 400, message: 'Missing id' })
 
   const body = await readBody(event)
 
-  const roleRecord = await supabaseAdmin
+  const roleRecord = await supabase
     .from('user_roles')
     .select('user_id')
     .eq('id', id)
@@ -21,7 +16,7 @@ export default defineEventHandler(async (event) => {
 
   // Update user_roles role if provided
   if (body.role) {
-    const { error: roleError } = await supabaseAdmin
+    const { error: roleError } = await supabase
       .from('user_roles')
       .update({ role: body.role })
       .eq('id', id)
@@ -31,7 +26,7 @@ export default defineEventHandler(async (event) => {
 
   // Update auth user metadata (name) if provided
   if (body.name) {
-    const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(
+    const { error: authError } = await supabase.auth.admin.updateUserById(
       roleRecord.data.user_id,
       { user_metadata: { full_name: body.name } }
     )

@@ -1,15 +1,10 @@
-import { createClient } from '@supabase/supabase-js'
-
 export default defineEventHandler(async (event) => {
-  const supabaseAdmin = createClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
+  const supabase = useAdminClient()
 
   const id = getRouterParam(event, 'id')
   if (!id) throw createError({ statusCode: 400, message: 'Missing id' })
 
-  const roleRecord = await supabaseAdmin
+  const roleRecord = await supabase
     .from('user_roles')
     .select('user_id')
     .eq('id', id)
@@ -18,7 +13,7 @@ export default defineEventHandler(async (event) => {
   if (roleRecord.error) throw createError({ statusCode: 404, message: 'User not found' })
 
   // Ban the auth user (soft-deactivate)
-  const { error: banError } = await supabaseAdmin.auth.admin.updateUserById(
+  const { error: banError } = await supabase.auth.admin.updateUserById(
     roleRecord.data.user_id,
     { ban_duration: '876000h' } // ~100 years
   )
@@ -26,7 +21,7 @@ export default defineEventHandler(async (event) => {
   if (banError) throw createError({ statusCode: 500, message: banError.message })
 
   // Remove the user_roles record
-  const { error: deleteError } = await supabaseAdmin
+  const { error: deleteError } = await supabase
     .from('user_roles')
     .delete()
     .eq('id', id)

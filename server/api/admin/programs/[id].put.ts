@@ -15,6 +15,7 @@ export default defineEventHandler(async (event): Promise<Program> => {
       slug: body.slug,
       content: body.content,
       deleted_at: body.deleted_at ?? undefined,
+      updated_at: new Date().toISOString(),
     })
     .eq('id', id)
     .select()

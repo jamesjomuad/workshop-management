@@ -1,6 +1,6 @@
-import type { ConferenceRoom } from '~/types'
+import type { Venue } from '~/types'
 
-export default defineEventHandler(async (event): Promise<ConferenceRoom> => {
+export default defineEventHandler(async (event): Promise<Venue> => {
   const supabase = useAdminClient()
   const body = await readBody(event)
 
@@ -8,11 +8,21 @@ export default defineEventHandler(async (event): Promise<ConferenceRoom> => {
     .from('venues')
     .insert({
       name: body.name,
-      venue_name: body.venue_name,
-      venue_address: body.venue_address || null,
-      floor: body.floor || null,
-      capacity: body.capacity,
+      type: body.type || 'other',
+      address: body.address || null,
+      city: body.city || null,
+      province: body.province || null,
+      country: body.country || null,
+      postal_code: body.postal_code || null,
+      latitude: body.latitude || null,
+      longitude: body.longitude || null,
+      contact_person: body.contact_person || null,
+      contact_phone: body.contact_phone || null,
+      contact_email: body.contact_email || null,
+      logo_url: body.logo_url || null,
+      cover_image_url: body.cover_image_url || null,
       notes: body.notes || null,
+      is_active: body.is_active ?? true,
     })
     .select()
     .single()

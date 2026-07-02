@@ -1,15 +1,18 @@
 -- ============================================
--- Contacts (people at client companies)
+-- Table: contacts
 -- ============================================
+DROP TABLE IF EXISTS contacts CASCADE;
+
 CREATE TABLE contacts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  company_id UUID REFERENCES companies(id) ON DELETE CASCADE NOT NULL,
+  company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
   first_name TEXT NOT NULL,
   last_name TEXT NOT NULL,
   email TEXT,
   phone TEXT,
   position TEXT,
   notes TEXT,
+  deleted_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -37,3 +40,4 @@ CREATE POLICY "Only admin can delete contacts"
   USING (get_user_role() = 'admin');
 
 CREATE INDEX idx_contacts_company ON contacts(company_id);
+CREATE INDEX idx_contacts_deleted ON contacts(deleted_at);

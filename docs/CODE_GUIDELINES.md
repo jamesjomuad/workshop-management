@@ -308,10 +308,6 @@ border-color: rgb(var(--v-theme-primary));
 
 ## 11. Known Inconsistencies (Do Not Replicate)
 
-- **`about.vue`** is missing `definePageMeta` — always include it
-- **`manage/venues/*`** uses direct `useFetch` instead of a composable — prefer composables
-- **`useWorkshops.ts`** imports `Category` type which doesn't exist in `types/index.ts`
-- **`manage/index.vue`, `programs.vue`, `enrollments.vue`** use hardcoded data — wire to API
 - **`confirm.vue`** uses `ref()` per field instead of `reactive({})` — use `reactive()` for forms
 - **`as any`** cast on workshop status types — use proper typing instead
 

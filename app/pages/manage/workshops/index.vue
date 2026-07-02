@@ -50,7 +50,8 @@
           </v-card-title>
           <v-card-subtitle class="text-body-2">
             <v-icon size="14" class="me-1">mdi-hotel</v-icon>
-            {{ item.conference_room?.venue_name ?? '' }} · {{ item.conference_room?.name ?? 'No room' }}
+            {{ item.conference_room?.name ?? 'No room' }}
+            <span v-if="item.conference_room?.city"> · {{ item.conference_room.city }}</span>
           </v-card-subtitle>
 
           <template #append>
@@ -69,11 +70,7 @@
           <span>
             <v-icon size="14" class="me-1">mdi-calendar</v-icon>
             <strong>{{ formatDate(item.date_start) }} – {{ formatDate(item.date_end) }}</strong>
-            ({{ dayCount }} days)
-          </span>
-          <span v-if="item.facilitator_name">
-            <v-icon size="14" class="me-1">mdi-account</v-icon>
-            Trainer: <strong>{{ item.facilitator_name }}</strong>
+            ({{ dayCount(item.date_start, item.date_end) }} days)
           </span>
           <span v-if="item.client?.name">
             <v-icon size="14" class="me-1">mdi-domain</v-icon>
@@ -105,9 +102,9 @@
 
     <!-- CALENDAR VIEW -->
     <div v-else class="d-flex flex-column flex-grow-1">
-      <v-card rounded="lg" variant="outlined" class="d-flex flex-column flex-grow-1 overflow-hidden">
+      <v-card rounded="lg" variant="flat" class="d-flex flex-column flex-grow-1 overflow-hidden">
         <!-- Legend bar -->
-        <v-sheet class="d-flex align-center pa-2 px-3" density="compact">
+        <v-sheet class="d-flex align-center py-2 py-3" density="compact">
           <div class="d-flex align-center ga-3 text-caption">
             <div v-for="(label, key) in legendItems" :key="key" class="d-flex align-center ga-1">
               <div :style="{ width: '10px', height: '10px', borderRadius: '3px', backgroundColor: `rgb(var(--v-theme-${legendColors[key as string]}))` }" />
@@ -135,7 +132,7 @@
           </v-menu>
         </v-sheet>
         <v-divider />
-
+        <div class="mb-2"></div>
         <!-- FullCalendar -->
         <ClientOnly>
           <FullCalendar ref="calendarRef" :options="calendarOptions" />
@@ -193,7 +190,12 @@ function formatDate(dateStr: string) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-const dayCount = 3
+function dayCount(start: string, end: string) {
+  const s = new Date(start)
+  const e = new Date(end)
+  if (e < s) return 1
+  return Math.round((e.getTime() - s.getTime()) / 86400000) + 1
+}
 
 // Calendar
 const calendarRef = ref()

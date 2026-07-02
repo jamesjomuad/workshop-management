@@ -7,17 +7,17 @@
 
 ---
 
-## Phase 2 — Curriculum (📋 Backlog)
+## Phase 2 — Curriculum (🔄 In Progress)
 
-The database schema is fully prepared (tables: `programs`, `workshop_programs`, `sessions`), and the project plan defines these as Phase 2 deliverables. The UI pages (`manage/programs.vue`) exist but use hardcoded data.
+The database schema is fully prepared (tables: `programs`, `program_topics`, `workshop_programs`), and the project plan defines these as Phase 2 deliverables. The UI pages (`manage/programs/*`) are now wired to live APIs.
 
 | Item | Priority | Status | Notes |
 |------|----------|--------|-------|
-| Programs CRUD (create, edit, delete) | P1 | 📋 Backlog | DB ready; no API endpoints or composable |
-| WorkshopProgram linking UI | P1 | 📋 Backlog | Wire existing `manage/workshops/new.vue` program section to live API |
-| Sessions CRUD (per workshop-program) | P1 | 📋 Backlog | DB ready; no API endpoints |
+| Programs CRUD (create, edit, soft-delete, restore) | P1 | ✅ Done | API endpoints, composable, and pages implemented |
+| WorkshopProgram linking UI | P1 | ✅ Done | `manage/workshops/new.vue` and `[id].vue` program sections are wired to live API |
+| Program topics CRUD + reorder | P1 | ✅ Done | Flattened topics model; API endpoints, composable, and pages implemented |
+| Replace hardcoded data in `manage/programs.vue` with live API calls | P1 | ✅ Done | `manage/programs/*` now uses live APIs |
 | Conference room display page (`/display?room=UUID`) | P2 | 📋 Backlog | HTML mockup at `docs/ui/session-display.html` |
-| Replace hardcoded data in `manage/programs.vue` with live API calls | P1 | 📋 Backlog | Currently uses local array |
 
 ## Phase 3 — Enrollment & Attendance (📋 Backlog)
 
@@ -38,22 +38,24 @@ Database schema is fully prepared (tables: `enrollments`, `attendance`). The `ma
 | Attendance summary per workshop | P2 | 📋 Backlog | No API or UI |
 | Client company portal (view sponsored trainees) | P2 | 📋 Backlog | No API or UI |
 | Certificate generation (PDF via Edge Function) | P3 | 📋 Backlog | Planned in project plan |
-| Admin dashboard overview stats (live) | P2 | 📋 Backlog | `/api/admin/stats` exists but `manage/index.vue` uses hardcoded data |
+| Admin dashboard overview stats (live) | P2 | ✅ Done | `/api/admin/stats` and `useStats` exist; `manage/index.vue` uses live workshop data |
 
 ## Technical Debt
 
 | Item | Priority | Status | Category | Notes |
 |------|----------|--------|----------|-------|
-| Replace hardcoded dashboard (`manage/index.vue`) with live API calls | P1 | 📋 Backlog | `manage/index.vue` uses local arrays, not `/api/admin/stats` | 
-| Implement `updated_at` trigger on all tables | P2 | 📋 Backlog | Database | All tables have the column but no auto-update |
+| Replace hardcoded dashboard (`manage/index.vue`) with live API calls | P1 | ✅ Done | `manage/index.vue` now uses `useAdminWorkshops` |
+| Fix `Category` type — missing in `types/index.ts` | P2 | ✅ Done | Added `Category` plus `MarketplaceVenue` / `MarketplaceWorkshop` |
+| Rename `ConferenceRoom` type → `Venue` (or vice versa) | P2 | ✅ Done | `ConferenceRoom` is now an alias of `Venue` |
+| Compute `dayCount` dynamically in `manage/workshops/index.vue` | P3 | ✅ Done | Computed from date range |
+| Add `.env.example` file | P1 | ✅ Done | Created with required env vars |
+| Replace `useFetch` mutations with `$fetch` | P1 | ✅ Done | Companies, contacts, and venues pages/composables updated |
+| Standardize server-side Supabase client | P1 | ✅ Done | All server endpoints use `useAdminClient()` |
+| Add `updated_at` updates to PUT handlers | P2 | ✅ Done | Rooms, companies, workshops, programs, contacts, topics |
+| Fix broken `supabase/seed.sql` | P0 | ✅ Done | Rewritten for flattened topics schema |
+| Fix program/topic draggable reorder | P1 | ✅ Done | Programs index and program detail pages now persist reorder |
+| Implement `updated_at` trigger on all tables | P2 | 📋 Backlog | Database | Handlers set it explicitly; no auto-update trigger |
 | Auto-generate Supabase database types | P2 | 📋 Backlog | Types | `types/database.types.ts` is a stub; enable `supabase.types` or use `supabase gen types` |
-| Fix `Category` type — missing in `types/index.ts` | P2 | 📋 Backlog | Types | `useWorkshops.ts` imports `Category` from `~/types` but it's not defined |
-| Rename `ConferenceRoom` type → `Venue` (or vice versa) | P2 | 📋 Backlog | Naming | Table was renamed `conference_rooms` → `venues` but TypeScript type and API routes still say `ConferenceRoom`/`rooms` |
-| Wire `manage/venues/index.vue` `hasWorkshop()` to real data | P2 | 📋 Backlog | UI | Currently always returns `false` |
-| Compute `dayCount` dynamically in `manage/workshops/index.vue` | P3 | 📋 Backlog | UI | Currently hardcoded to `3` |
-| Remove `console.log` statements from production code | P3 | 📋 Backlog | Cleanup | `AppFooter.vue:106`, `manage/users.vue:62,66` |
-| Add delete/confirm dialog to `manage/workshops/index.vue` | P2 | 📋 Backlog | UI | Venue index has delete dialog; workshops index does not |
-| Implement user edit and delete in `manage/users.vue` | P2 | 📋 Backlog | UI | Buttons exist but only call `console.log` |
 | Replace `manage/settings.vue` hardcoded values with real user data | P2 | 📋 Backlog | UI | Uses hardcoded "Admin User" / "admin@example.com" |
 | Missing no-data/empty states on `manage/workshops/new.vue` venue dropdown | P3 | 📋 Backlog | UX | `v-autocomplete` has a `no-data` slot but it's minimal |
 | Add delete functionality to `manage/workshops/[id].vue` | P2 | 📋 Backlog | UI | Can edit but not delete a workshop from edit page |
@@ -78,20 +80,19 @@ No test framework or test files were found in the project. The following should 
 | Add type checking (vue-tsc) | P2 | DX | Currently no typecheck script |
 | Add pre-commit hooks (husky/lint-staged) | P3 | DX | Not configured |
 | Set up CI/CD pipeline | P2 | DevOps | No `.github/` or CI config found |
-| Add `.env.example` file | P1 | DX | Missing — `.env` exists but is gitignored; no template |
 | Install and configure `@nuxtjs/supabase` database types | P2 | DX | Enable `supabase.types` or use Supabase CLI |
 | Consider adding proper error boundaries | P2 | UX | Most errors just show snackbar messages |
 | Add loading skeleton states to data tables | P3 | UX | Loading states use `:loading` prop on `v-data-table` but no skeleton UI |
-| Implement role-based route protection with `admin` middleware | P1 | Security | Middleware exists but is not used on any `definePageMeta` |
+| Implement role-based route protection with `admin` middleware | P1 | Security | ✅ Applied to `/manage/users`; middleware available for future admin-only pages |
 
 ## Summary
 
 | Category | Count |
 |----------|-------|
-| Phase 2 items (Curriculum) | 4 |
+| Phase 2 items (Curriculum) | 5 |
 | Phase 3 items (Enrollment & Attendance) | 5 |
 | Phase 4 items (Reporting & Client Portal) | 4 |
-| Technical debt items | 12 |
+| Technical debt items | 15 |
 | Missing tests | 5 |
-| Improvements & opportunities | 9 |
-| **Total** | **39** |
+| Improvements & opportunities | 8 |
+| **Total** | **42** |

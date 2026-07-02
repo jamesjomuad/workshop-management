@@ -1,6 +1,6 @@
-import type { ConferenceRoom } from '~/types'
+import type { Venue } from '~/types'
 
-export default defineEventHandler(async (): Promise<ConferenceRoom[]> => {
+export default defineEventHandler(async (): Promise<Venue[]> => {
   const supabase = useAdminClient()
   const { data, error } = await supabase
     .from('venues')

@@ -72,12 +72,15 @@
                             style="cursor:pointer"
                           />
                         </template>
-                        <v-date-picker
-                          v-model="s.date_start"
-                          :min="today"
-                          color="primary"
-                          @update:model-value="() => { if (s.date_end && s.date_start > s.date_end) s.date_end = s.date_start }"
-                        />
+           <v-date-picker
+            :model-value="s.date_start"
+            @update:model-value="val => {
+              s.date_start = val ? val.getFullYear() + '-' + String(val.getMonth() + 1).padStart(2, '0') + '-' + String(val.getDate()).padStart(2, '0') : '';
+              if (s.date_end && s.date_start > s.date_end) s.date_end = s.date_start;
+            }"
+            :min="today"
+            color="primary"
+          />
                       </v-menu>
                       <v-icon class="flex-shrink-0">mdi-chevron-right</v-icon>
                       <v-menu :close-on-content-click="false">
@@ -95,11 +98,12 @@
                             style="cursor:pointer"
                           />
                         </template>
-                        <v-date-picker
-                          v-model="s.date_end"
-                          :min="s.date_start || today"
-                          color="primary"
-                        />
+           <v-date-picker
+            :model-value="s.date_end"
+            @update:model-value="val => s.date_end = val ? val.getFullYear() + '-' + String(val.getMonth() + 1).padStart(2, '0') + '-' + String(val.getDate()).padStart(2, '0') : ''"
+            :min="s.date_start || today"
+            color="primary"
+          />
                       </v-menu>
                     </div>
                     <div class="d-flex align-center ga-2">
@@ -190,7 +194,7 @@
                     <v-list-item
                       v-bind="props"
                       :title="item.name"
-                      :subtitle="item.venue_name + (item.capacity ? ' · ' + item.capacity + ' pax' : '')"
+                      :subtitle="[item.type, item.city].filter(Boolean).join(' · ')"
                     >
                       <template #prepend>
                         <v-icon size="18" color="warning" class="me-2">mdi-door-open</v-icon>
@@ -201,7 +205,7 @@
                     <div class="d-flex align-center ga-2">
                       <v-icon size="18" color="warning">mdi-door-open</v-icon>
                       <span class="font-weight-medium">{{ item.name }}</span>
-                      <span class="text-caption text-medium-emphasis ms-1">— {{ item.venue_name }}</span>
+                      <span v-if="item.city" class="text-caption text-medium-emphasis ms-1">— {{ item.city }}</span>
                     </div>
                   </template>
                   <template #no-data>
@@ -698,7 +702,13 @@ function removeSchedule(i: number) {
 
 function fmtDateShort(d: any) {
   if (!d) return ''
-  const dt = d instanceof Date ? d : new Date(d + 'T00:00:00')
+  let dt: Date
+  if (d instanceof Date) {
+    dt = d
+  } else {
+    const [y, m, day] = String(d).split('-').map(Number)
+    dt = new Date(y, m - 1, day)
+  }
   return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
@@ -728,7 +738,8 @@ async function checkConflicts() {
 
 function formatDate(d: string) {
   if (!d) return ''
-  return new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  const [y, m, day] = d.split('-').map(Number)
+  return new Date(y, m - 1, day).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
 watch(() => form.conference_room_id, () => checkConflicts())
@@ -738,7 +749,11 @@ const summary = computed(() => {
   const title = form.title
 
   const filled = form.schedules.filter(s => s.date_start && s.date_end)
-  const toStr = (d: any) => d instanceof Date ? d.toISOString().slice(0, 10) : d
+  const toStrSummary = (d: any) => {
+    if (!d) return ''
+    if (d instanceof Date) return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')
+    return String(d)
+  }
   const dates = filled.length > 0
     ? filled.map(s => `${fmtDateShort(s.date_start)} – ${fmtDateShort(s.date_end)}`).join(', ')
     : null
@@ -746,8 +761,8 @@ const summary = computed(() => {
   let duration = '—'
   if (filled.length > 0) {
     const totalDays = filled.reduce((sum, s) => {
-      const sd = new Date(toStr(s.date_start) + 'T00:00:00')
-      const ed = new Date(toStr(s.date_end) + 'T00:00:00')
+      const sd = new Date(toStrSummary(s.date_start) + 'T00:00:00')
+      const ed = new Date(toStrSummary(s.date_end) + 'T00:00:00')
       if (ed < sd) return sum
       return sum + Math.round((ed.getTime() - sd.getTime()) / 86400000) + 1
     }, 0)
@@ -760,7 +775,7 @@ const summary = computed(() => {
     .join(', ')
   const timeLabel = times || null
 
-  const room = selectedRoom.value ? `${selectedRoom.value.name} · ${selectedRoom.value.venue_name}` : null
+  const room = selectedRoom.value ? `${selectedRoom.value.name}${selectedRoom.value.city ? ' · ' + selectedRoom.value.city : ''}` : null
   const trainer = users.value?.find(u => u.id === form.facilitator_id)?.name || null
   const facilitator = users.value?.find(u => u.id === form.facilitator_assistant)?.name || null
 
@@ -807,7 +822,11 @@ async function save(publishStatus: string) {
       .map(p => ({ program_id: p.program_id!, trainer_id: p.trainer_id }))
 
     const filledSchedules = form.schedules.filter(s => s.date_start && s.date_end)
-    const toStr = (d: any) => d instanceof Date ? d.toISOString().slice(0, 10) : d
+    const toStr = (d: any) => {
+      if (!d) return ''
+      if (d instanceof Date) return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')
+      return String(d)
+    }
     const ds = filledSchedules.map(s => toStr(s.date_start)).sort()[0]
     const de = filledSchedules.map(s => toStr(s.date_end)).sort().slice(-1)[0]
 

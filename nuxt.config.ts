@@ -1,5 +1,9 @@
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
+  routeRules: {
+    '/manage': { ssr: false },
+    '/manage/**': { ssr: false }, // covers all nested dashboard routes
+  },
   devtools: { enabled: true },
   modules: [
     'vuetify-nuxt-module',

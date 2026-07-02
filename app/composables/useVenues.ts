@@ -1,4 +1,4 @@
-import type { Venue, EventType, Testimonial } from '~/types'
+import type { MarketplaceVenue, EventType, Testimonial } from '~/types'
 
 export function useVenues() {
   const searchQuery = ref('')
@@ -9,7 +9,7 @@ export function useVenues() {
     pending,
     error,
     refresh,
-  } = useFetch<{ venues: Venue[]; eventTypes: EventType[]; testimonials: Testimonial[] }>(
+  } = useFetch<{ venues: MarketplaceVenue[]; eventTypes: EventType[]; testimonials: Testimonial[] }>(
     '/api/venues'
   )
 

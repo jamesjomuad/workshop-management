@@ -209,7 +209,7 @@ Public-facing TV display mounted outside the conference room.
 - [x] Nuxt 4 + Supabase project setup
 - [x] Auth (email/password, forgot password, signup)
 - [x] Role system (`user_roles` table) + RLS policies on all tables
-- [x] Database migration (9 tables: companies, user_roles, conference_rooms, workshops, programs, workshop_programs, sessions, enrollments, attendance)
+- [x] Database migration (11 tables: companies, user_roles, venues, contacts, workshops, workshop_schedules, programs, program_topics, workshop_programs, enrollments, attendance)
 - [x] Conference rooms CRUD (`/manage/admin/rooms`) — list, create, edit, delete
 - [x] Workshops CRUD (`/manage/admin/workshops`) — list, create, edit, delete
 - [x] Admin overview dashboard (`/manage/admin`) — stat cards, recent workshops, quick actions

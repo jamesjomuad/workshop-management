@@ -1,7 +1,7 @@
-import type { Workshop, Category, Testimonial } from '~/types'
+import type { MarketplaceWorkshop, Category, Testimonial } from '~/types'
 
 export default defineEventHandler(() => {
-  const workshops: Workshop[] = [
+  const workshops: MarketplaceWorkshop[] = [
     {
       id: 1,
       title: 'Hand-Building Pottery Basics',
@@ -110,7 +110,8 @@ export default defineEventHandler(() => {
       id: 1,
       name: 'Alisha R.',
       avatar: 'https://i.pravatar.cc/80?img=1',
-      role: 'Pottery Enthusiast',
+      title: 'Pottery Enthusiast',
+      company: '',
       quote: 'I booked a wheel-throwing workshop on a whim and it was the best decision I\'ve made this year. The instructor was patient and the studio had such a welcoming vibe.',
       rating: 5,
     },
@@ -118,7 +119,8 @@ export default defineEventHandler(() => {
       id: 2,
       name: 'Marcus T.',
       avatar: 'https://i.pravatar.cc/80?img=3',
-      role: 'Home Baker',
+      title: 'Home Baker',
+      company: '',
       quote: 'The sourdough workshop was incredible. I went from killing my starter to baking bakery-quality bread in one session. Already signed up for the advanced class!',
       rating: 5,
     },
@@ -126,7 +128,8 @@ export default defineEventHandler(() => {
       id: 3,
       name: 'Leila K.',
       avatar: 'https://i.pravatar.cc/80?img=5',
-      role: 'Yoga Practitioner',
+      title: 'Yoga Practitioner',
+      company: '',
       quote: 'The riverside yoga session was magical. Booking was seamless — I picked my spot, paid, and got a reminder the day before. Couldn\'t be easier.',
       rating: 4,
     },
@@ -134,7 +137,8 @@ export default defineEventHandler(() => {
       id: 4,
       name: 'Owen S.',
       avatar: 'https://i.pravatar.cc/80?img=7',
-      role: 'Aspiring Photographer',
+      title: 'Aspiring Photographer',
+      company: '',
       quote: 'David\'s portrait photography workshop taught me more in 3 hours than I learned in a year of YouTube tutorials. Worth every penny.',
       rating: 5,
     },

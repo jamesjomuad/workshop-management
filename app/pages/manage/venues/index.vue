@@ -3,7 +3,7 @@
     <div class="d-flex align-center mb-4">
       <div>
         <h1 class="text-h4 font-weight-bold ma-0">Venues</h1>
-        <div class="text-caption text-medium-emphasis mt-1">{{ venues?.length ?? 0 }} conference rooms</div>
+        <div class="text-caption text-medium-emphasis mt-1">{{ venues?.length ?? 0 }} venues</div>
       </div>
       <v-spacer />
       <v-btn :to="'/manage/venues/new'" color="primary" prepend-icon="mdi-plus">
@@ -23,54 +23,69 @@
           rounded="lg"
           variant="outlined"
           :to="`/manage/venues/${item.id}`"
-          class="room-card"
+          :class="['venue-card', { 'opacity-60': !item.is_active }]"
         >
           <v-card-item>
+            <template #prepend>
+              <v-avatar size="40" :color="typeColor[item.type]" variant="tonal" class="me-3">
+                <v-icon size="20">{{ typeIcon[item.type] }}</v-icon>
+              </v-avatar>
+            </template>
+            <v-card-title class="text-body-1 font-weight-bold pa-0">{{ item.name }}</v-card-title>
+            <v-card-subtitle class="text-caption mt-1 pa-0">
+              {{ typeLabel[item.type] }}
+            </v-card-subtitle>
             <template #append>
               <v-chip
                 size="x-small"
-                :color="chipColor(item.status)"
+                :color="item.is_active ? 'success' : 'grey'"
                 variant="tonal"
               >
-                <template #prepend><v-icon size="8" :color="chipColor(item.status)">mdi-circle</v-icon></template>
-                {{ statusLabel(item.status) }}
+                {{ item.is_active ? 'Active' : 'Inactive' }}
               </v-chip>
             </template>
           </v-card-item>
 
-            <v-card-text style="position:relative">
-              <v-btn
-                icon
-                variant="text"
-                size="x-small"
-                color="error"
-                class="delete-btn"
-                @click.stop.prevent="confirmDelete(item)"
-              >
-                <v-icon size="18">mdi-delete</v-icon>
-              </v-btn>
-              <div class="text-caption text-medium-emphasis font-family-mono mb-1">
-              <v-icon size="14" class="me-1">mdi-hotel</v-icon>
-              {{ item.venue_name }}
-            </div>
-            <div class="text-h6 font-weight-bold mb-2">{{ item.name }}</div>
-            <div class="text-body-2 text-medium-emphasis mb-3">
-              <v-icon size="14" class="me-1">mdi-account-group</v-icon>
-              Capacity: {{ item.capacity }} pax
-              <span v-if="item.floor"> · {{ item.floor }}</span>
-            </div>
+          <v-divider />
 
-            <div v-if="hasWorkshop(item.id)" class="bg-grey-lighten-4 rounded pa-3" style="border-left:3px solid rgb(var(--v-theme-primary))">
-              <div class="text-body-2 font-weight-medium">PM Workshop — Batch 4</div>
-              <div class="text-caption text-medium-emphasis font-family-mono">Jun 24 – Jun 27, 2025</div>
-            </div>
-            <div v-else class="bg-grey-lighten-4 rounded pa-3 text-medium-emphasis text-body-2">
-              <em>No workshop scheduled</em>
+          <v-card-text>
+            <div class="d-flex flex-column ga-2">
+              <div v-if="item.address || item.city" class="d-flex align-center text-caption text-medium-emphasis">
+                <v-icon size="14" class="me-2">mdi-map-marker</v-icon>
+                <span>{{ formatLocation(item) }}</span>
+              </div>
+              <div v-if="item.contact_person" class="d-flex align-center text-caption text-medium-emphasis">
+                <v-icon size="14" class="me-2">mdi-account</v-icon>
+                <span>{{ item.contact_person }}</span>
+              </div>
+              <div v-if="item.contact_phone" class="d-flex align-center text-caption text-medium-emphasis">
+                <v-icon size="14" class="me-2">mdi-phone</v-icon>
+                <span>{{ item.contact_phone }}</span>
+              </div>
             </div>
           </v-card-text>
+
+          <v-card-actions class="pa-3 pt-0">
+            <v-spacer />
+            <v-btn
+              icon
+              variant="text"
+              size="x-small"
+              color="error"
+              @click.stop.prevent="confirmDelete(item)"
+            >
+              <v-icon size="18">mdi-delete</v-icon>
+            </v-btn>
+          </v-card-actions>
         </v-card>
       </v-col>
     </v-row>
+
+    <div v-if="(venues?.length ?? 0) === 0 && !pending" class="py-12 text-center text-medium-emphasis">
+      <v-icon size="48" class="mb-2">mdi-office-building-outline</v-icon>
+      <div class="text-body-1 font-weight-medium">No venues yet</div>
+      <div class="text-caption mt-1">Add your first venue to get started</div>
+    </div>
 
     <v-dialog v-model="deleteDialog" max-width="400">
       <v-card rounded="lg">
@@ -89,24 +104,32 @@
 </template>
 
 <script setup lang="ts">
+import type { Venue } from '~/types'
+
 definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
-import type { ConferenceRoom } from '~/types'
+const { data: venues, pending, refresh } = useFetch<Venue[]>('/api/admin/rooms')
 
-const { data: venues, pending, refresh } = useFetch<ConferenceRoom[]>('/api/admin/rooms')
+const typeLabel: Record<string, string> = { hotel: 'Hotel', convention_center: 'Convention Center', office: 'Office', other: 'Other' }
+const typeIcon: Record<string, string> = { hotel: 'mdi-bed', convention_center: 'mdi-domain', office: 'mdi-desk', other: 'mdi-map-marker' }
+const typeColor: Record<string, string> = { hotel: 'primary', convention_center: 'secondary', office: 'info', other: 'grey' }
+
+function formatLocation(v: Venue) {
+  const parts = [v.city, v.province, v.country].filter(Boolean)
+  return parts.length ? parts.join(', ') : v.address || 'No location set'
+}
 
 async function deleteVenue(id: string) {
-  const { error } = await useFetch(`/api/admin/rooms/${id}`, { method: 'DELETE' })
-  if (error.value) throw new Error(error.value.message)
+  await $fetch(`/api/admin/rooms/${id}`, { method: 'DELETE' })
   await refresh()
 }
 
 const deleteDialog = ref(false)
 const deleting = ref(false)
-const deletingItem = ref<ConferenceRoom | null>(null)
+const deletingItem = ref<Venue | null>(null)
 const snackbar = ref({ show: false, text: '', color: 'success' })
 
-function confirmDelete(item: ConferenceRoom) {
+function confirmDelete(item: Venue) {
   deletingItem.value = item
   deleteDialog.value = true
 }
@@ -124,26 +147,10 @@ async function handleDelete() {
     deleting.value = false
   }
 }
-
-function chipColor(s: string) {
-  const map: Record<string, string> = { available: 'grey', booked: 'warning', in_use: 'success' }
-  return map[s] || 'grey'
-}
-
-function statusLabel(s: string) {
-  const map: Record<string, string> = { available: 'Available', booked: 'Booked soon', in_use: 'In use' }
-  return map[s] || s
-}
-
-function hasWorkshop(_roomId: string) {
-  return false
-}
 </script>
 
 <style scoped>
-.room-card { cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; }
-.room-card:hover { border-color: rgb(var(--v-theme-primary)) !important; }
-.room-card:hover .delete-btn { opacity: 1; }
-.delete-btn { position: absolute; top: 8px; right: 8px; opacity: 0; transition: opacity 0.15s; }
-.font-family-mono { font-family: 'DM Mono', 'SF Mono', 'Cascadia Code', monospace; }
+.venue-card { cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; }
+.venue-card:hover { border-color: rgb(var(--v-theme-primary)) !important; }
+.opacity-60 { opacity: 0.6; }
 </style>

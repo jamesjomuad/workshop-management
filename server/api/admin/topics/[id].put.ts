@@ -9,6 +9,7 @@ export default defineEventHandler(async (event) => {
       title: body.title,
       status: body.status,
       sort_order: body.sort_order,
+      updated_at: new Date().toISOString(),
     })
     .eq('id', id)
     .select()

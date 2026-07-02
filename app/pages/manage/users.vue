@@ -169,7 +169,7 @@
 <script setup lang="ts">
 import type { User } from '~/types'
 
-definePageMeta({ layout: 'dashboard', middleware: 'auth' })
+definePageMeta({ layout: 'dashboard', middleware: ['auth', 'admin'] })
 
 const { users, pending, inviteUser, updateUser, deleteUser, resetPassword } = useUsers()
 const search = ref('')

@@ -22,6 +22,8 @@ npm run build  # verify compilation (no lint/typecheck/test scripts)
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+# Optional: base URL for auth invite/reset redirects (defaults to request origin + /confirm)
+# AUTH_REDIRECT_URL=http://localhost:3000/confirm
 ```
 
 ---
@@ -33,48 +35,51 @@ workshop/
 ├── app/                          # Frontend (Vue 3 + Nuxt 4)
 │   ├── app.vue                   # Root: <NuxtLayout><NuxtPage/>
 │   ├── components/               # 14 reusable components
-│   ├── composables/              # 9 composables (useAuth, useAdmin*, etc.)
-│   ├── layouts/                  # default.vue (public), dashboard.vue (admin)
-│   ├── middleware/               # auth.ts, admin.ts
-│   ├── pages/                    # File-based routing
-│   │   ├── index.vue, login.vue, signup.vue, confirm.vue, about.vue
-│   │   └── manage/               # Auth-protected admin pages
-│   │       ├── index.vue         # Dashboard (HARDCODED data)
-│   │       ├── venues/           # List + new + edit (live Supabase)
-│   │       ├── workshops/        # List + new + edit (live Supabase)
-│   │       ├── contacts.vue      # Contacts + Companies (live Supabase)
-│   │       ├── programs.vue      # HARDCODED demo data
-│   │       ├── enrollments.vue   # HARDCODED demo data
-│   │       ├── users.vue         # User list (live Supabase Auth)
-│   │       └── settings.vue      # HARDCODED form
-│   └── types/                    # Empty directory
-├── server/                       # Backend (Nitro)
-│   ├── api/                      # File-based REST endpoints
-│   │   ├── venues.get.ts         # MOCK data (venue marketplace)
-│   │   ├── workshops.get.ts      # MOCK data (workshop marketplace)
-│   │   ├── stats.get.ts          # MOCK data (dashboard stats)
-│   │   ├── users.get.ts          # Supabase Auth admin list
-│   │   ├── invite.post.ts        # Supabase Auth invite
-│   │   └── admin/                # Live Supabase (service role key)
-│   │       ├── rooms/            # Venues CRUD (GET/POST/[id].PUT/[id].DELETE)
-│   │       ├── workshops/        # Workshops CRUD (GET/POST/[id].PUT/[id].DELETE)
-│   │       ├── companies/        # Companies CRUD (GET/POST/[id].PUT/[id].DELETE)
-│   │       ├── contacts/         # Contacts CRUD (GET/POST/[id].PUT/[id].DELETE)
-│   │       └── stats.get.ts      # Aggregate counts from DB
-│   └── utils/supabase.ts         # useAdminClient() — service role client
-├── supabase/
-│   ├── config.toml               # Local dev config
-│   └── migrations/               # 4 SQL migrations
-├── types/
-│   ├── index.ts                  # 18 hand-written TypeScript interfaces
-│   └── database.types.ts         # STUB — not auto-generated
-├── docs/
-│   ├── plans/training-management-system-plan.md
-│   └── ui/                       # HTML mockups (3 files)
-├── AGENTS.md                     # Agent instructions
-├── ARCHITECTURE.md               # Full architecture doc
-├── DECISIONS.md                  # Architectural decisions
-└── TODO.md                       # Unfinished items & tech debt
+。  │   ├── composables/              # 10 composables (useAuth, useAdmin*, useStats, etc.)
+  │   ├── layouts/                  # default.vue (public), dashboard.vue (admin)
+  │   ├── middleware/               # auth.ts, admin.ts
+  │   ├── pages/                    # File-based routing
+  │   │   ├── index.vue, login.vue, signup.vue, confirm.vue, about.vue
+  │   │   └── manage/               # Auth-protected admin pages
+  │   │       ├── index.vue         # Workshops overview (live Supabase)
+  │   │       ├── venues/           # List + new + edit (live Supabase)
+  │   │       ├── workshops/        # List + new + edit (live Supabase)
+  │   │       ├── contacts/         # Contacts + Companies (live Supabase)
+  │   │       ├── companies/new.vue # Add company dialog entry
+  │   │       ├── programs/         # Programs + Topics CRUD (live Supabase)
+  │   │       ├── enrollments.vue   # HARDCODED demo data
+  │   │       ├── users.vue         # User list (live Supabase Auth, admin only)
+  │   │       └── settings.vue      # HARDCODED form
+  │   └── types/                    # Empty directory
+  ├── server/                       # Backend (Nitro)
+  │   ├── api/                      # File-based REST endpoints
+  │   │   ├── venues.get.ts         # MOCK data (venue marketplace)
+  │   │   ├── workshops.get.ts      # MOCK data (workshop marketplace)
+  │   │   ├── stats.get.ts          # MOCK data (dashboard stats)
+  │   │   ├── users.get.ts          # Supabase Auth admin list
+  │   │   ├── invite.post.ts        # Supabase Auth invite
+  │   │   └── admin/                # Live Supabase (service role key)
+  │   │       ├── rooms/            # Venues CRUD
+  │   │       ├── workshops/        # Workshops CRUD + conflict detection
+  │   │       ├── companies/        # Companies CRUD
+  │   │       ├── contacts/         # Contacts CRUD
+  │   │       ├── programs/         # Programs CRUD + reorder
+  │   │       ├── topics/           # Program topics CRUD + reorder
+  │   │       └── stats.get.ts      # Aggregate counts from DB
+  │   └── utils/supabase.ts         # useAdminClient() — service role client
+  ├── supabase/
+  │   ├── config.toml               # Local dev config
+  │   └── migrations/               # Setup + one migration per table + seed
+  ├── types/
+  │   ├── index.ts                  # Hand-written TypeScript interfaces
+  │   └── database.types.ts         # STUB — not auto-generated
+  ├── docs/
+  │   ├── plans/training-management-system-plan.md
+  │   └── ui/                       # HTML mockups (3 files)
+  ├── AGENTS.md                     # Agent instructions
+  ├── ARCHITECTURE.md               # Full architecture doc
+  ├── DECISIONS.md                  # Architectural decisions
+  └── TODO.md                       # Unfinished items & tech debt
 ```
 
 ---
@@ -85,7 +90,7 @@ workshop/
 |-------|--------|-----------|-------|
 | `/`, `/login`, `/signup`, `/confirm`, `/about` | `default` | none | Public |
 | `/manage/*` | `dashboard` | `auth` | Auth required |
-| *(future admin-only pages)* | `dashboard` | `admin` | Checks `user_roles` table |
+| `/manage/users` | `dashboard` | `['auth', 'admin']` | Admin/staff only |
 
 **Every page must declare** `definePageMeta({ layout: '...', middleware: '...' })`.
 
@@ -100,8 +105,8 @@ workshop/
 |---|---|---|
 | `/api/venues`, `/api/workshops`, `/api/stats` | Hardcoded JS objects | None (public) |
 | `/api/admin/*` | Live Supabase via `useAdminClient()` | `SUPABASE_SERVICE_ROLE_KEY` |
-| `/api/users`, `/api/invite` | Supabase Auth Admin API via `createClient()` | `SUPABASE_SERVICE_ROLE_KEY` |
-| `manage/index.vue`, `programs.vue`, `enrollments.vue` | Local hardcoded arrays | None |
+| `/api/users`, `/api/invite` | Supabase Auth Admin API via `useAdminClient()` | `SUPABASE_SERVICE_ROLE_KEY` |
+| `manage/enrollments.vue` | Local hardcoded arrays | None |
 
 **The landing page (`/api/venues`, `/api/workshops`) serves DIFFERENT data from the admin system** — it's a venue marketplace concept, not the same workshops. Do not confuse the two.
 
@@ -122,7 +127,7 @@ export default defineEventHandler(async (event): Promise<Type> => {
 ```
 
 - All admin endpoints use `useAdminClient()` (service role, bypasses RLS)
-- Auth endpoints (`/api/users`, `/api/invite`) use direct `createClient` with same service key
+- Auth endpoints (`/api/users`, `/api/invite`) also use `useAdminClient()` for consistency
 - Error pattern: always `throw createError({ statusCode: 500, message })`
 - All endpoints import types from `~/types`
 
@@ -143,11 +148,11 @@ export function useAdminWorkshops() {
 }
 ```
 
-Existing composables: `useAuth`, `useVenues`, `useWorkshops`, `useAdmin`, `useAdminWorkshops`, `useCompanies`, `useContacts`, `useUsers`, `useStats`.
+Existing composables: `useAuth`, `useVenues`, `useWorkshops`, `useAdmin`, `useAdminWorkshops`, `useAdminPrograms`, `useCompanies`, `useContacts`, `useUsers`, `useStats`.
 
 ---
 
-## Database (10 tables)
+## Database (11 tables)
 
 ### Entity Relationship
 
@@ -156,36 +161,41 @@ auth.users → user_roles → companies
                               │
 user_roles ──► workshops ──► venues
               │       │
+              │       ├──► workshop_schedules
+              │       │
+              │       ├──► workshop_programs
+              │       │         │
+              │       │    programs
+              │       │         │
+              │       │    program_topics
+              │       │
               │       └──► enrollments ──► attendance
               │
-              └──► workshop_programs ──► sessions
-                         │
-                    programs
-              
 companies ──► contacts
 ```
 
 ### Key points
 
-- `venues` was originally named `conference_rooms` — renamed via migration `20260628000002` but TypeScript type is still `ConferenceRoom` and API routes still say `/rooms`
-- All 10 tables have RLS enabled with `get_user_role()` helper
+- `venues` was originally named `conference_rooms`; it is now `venues` in the final schema. TypeScript keeps `ConferenceRoom` as an alias of `Venue` and API routes still use `/rooms`.
+- All 11 tables have RLS enabled with `get_user_role()` helper
 - No `updated_at` trigger — column exists but must be set manually in code
-- Indexes on all FK columns and frequently queried fields (15 total)
+- Indexes on all FK columns and frequently queried fields
 - Single company (no multi-tenancy)
 
 ### RLS Summary
 
 | Table | SELECT | INSERT | UPDATE | DELETE |
 |-------|--------|--------|--------|--------|
-| `companies` | all auth | admin/staff | admin/staff | admin |
+| `companies` | all auth | admin/staff/organizer | admin/staff/organizer | admin |
 | `user_roles` | own or admin | admin | admin | admin |
-| `venues` | all auth | admin/staff | admin/staff | admin |
-| `workshops` | all auth | admin/staff | admin/staff | admin |
-| `programs` | all auth | admin/staff/trainer | admin/staff/trainer | admin |
-| `workshop_programs` | all auth | admin/staff | admin/staff | admin |
-| `sessions` | all auth | admin/staff/trainer | admin/staff/trainer | admin |
-| `enrollments` | own or admin/staff/facilitator | admin/staff | admin/staff | admin |
-| `attendance` | own or admin/staff/trainer/facilitator | trainer/facilitator/admin/staff | trainer/facilitator/admin/staff | admin |
+| `venues` | all auth | admin/staff/organizer | admin/staff/organizer | admin |
+| `workshops` | all auth | admin/staff/organizer | admin/staff/organizer | admin |
+| `workshop_schedules` | all auth | admin/staff/organizer | admin/staff/organizer | admin |
+| `programs` | all auth | admin/staff/trainer/organizer | admin/staff/trainer/organizer | admin |
+| `program_topics` | all auth | admin/staff/trainer/organizer | admin/staff/trainer/organizer | admin |
+| `workshop_programs` | all auth | admin/staff/organizer | admin/staff/organizer | admin |
+| `enrollments` | own or admin/staff/facilitator/organizer | admin/staff/organizer | admin/staff/organizer | admin |
+| `attendance` | own or admin/staff/trainer/facilitator/organizer | trainer/facilitator/admin/staff/organizer | trainer/facilitator/admin/staff/organizer | admin |
 | `contacts` | all auth | admin/staff | admin/staff | admin |
 
 ---
@@ -202,21 +212,17 @@ companies ──► contacts
 
 ## Notable Quirks & Gotchas
 
-1. **Two separate domains** — Landing page mock data (`venues.get.ts`, `workshops.get.ts`) is unrelated to admin system data. The `Venue` type (landing) has different fields than `ConferenceRoom` (admin).
+1. **Two separate domains** — Landing page mock data (`venues.get.ts`, `workshops.get.ts`) is unrelated to admin system data. Marketplace types are `MarketplaceVenue` / `MarketplaceWorkshop` / `Category`; admin venue type is `Venue` (alias `ConferenceRoom`).
 
-2. **Undeclared type** — `useWorkshops.ts` imports `Category` from `~/types` but it's **not defined** in `types/index.ts`. It's inferred from the mock API response shape.
+2. **`cookie` alias** — `nuxt.config.ts` has `'cookie': 'cookie/dist/index.js'` — a Vite workaround for the `cookie` package.
 
-3. **`cookie` alias** — `nuxt.config.ts` has `'cookie': 'cookie/dist/index.js'` — a Vite workaround for the `cookie` package.
+3. **Stub database types** — `types/database.types.ts` has empty `Tables`/`Views`/`Enums`. Not auto-generated.
 
-4. **Stub database types** — `types/database.types.ts` has empty `Tables`/`Views`/`Enums`. Not auto-generated.
+4. **`manage/venues/[id].vue`** loads ALL venues then finds by ID client-side instead of a dedicated `GET /api/admin/rooms/:id` endpoint.
 
-5. **`manage/venues/[id].vue`** loads ALL venues then finds by ID client-side instead of a dedicated `GET /api/admin/rooms/:id` endpoint.
+5. **`manage/workshops/[id].vue`** populates the form via `watch(workshop, ..., { immediate: true })`.
 
-6. **`manage/workshops/[id].vue`** doesn't populate form from existing data on load — `watch(workshop, ..., { immediate: true })` handles this.
-
-7. **Hardcoded dashboard** — `manage/index.vue` uses local arrays. `/api/admin/stats` exists but is unused by the dashboard.
-
-8. **No `updated_at` updates** — Columns exist on all tables with `DEFAULT NOW()` but are never updated.
+6. **No `updated_at` triggers** — Columns exist with `DEFAULT NOW()`; handlers set `updated_at` explicitly on PUT.
 
 ---
 
@@ -226,7 +232,7 @@ companies ──► contacts
 - RLS is the primary authorization mechanism, not middleware
 - `admin.ts` middleware is defined but **not referenced** by any page's `definePageMeta` — currently unused
 - No CSRF, rate limiting, or input sanitization beyond Supabase client's built-in parameterization
-- `/api/users` and `/api/invite` use service role key with no additional auth check on the endpoint itself
+- `/api/users` and `/api/invite` use `useAdminClient()` (service role) with no additional endpoint-level auth check
 
 ---
 
@@ -234,8 +240,8 @@ companies ──► contacts
 
 | Phase | Status | Deliverables |
 |-------|--------|-------------|
-| 1 — Foundation | ✅ **Done** | Auth, DB (10 tables), venues CRUD, workshops CRUD, dashboard overview, contacts/companies CRUD, user management, RLS policies |
-| 2 — Curriculum | ❌ **Planned** | Programs CRUD, WorkshopProgram linking, sessions CRUD, room display page |
+| 1 — Foundation | ✅ **Done** | Auth, DB (11 tables), venues CRUD, workshops CRUD, dashboard overview, contacts/companies CRUD, user management, RLS policies |
+| 2 — Curriculum | 🚧 **In Progress** | Programs CRUD, WorkshopProgram linking, topics CRUD |
 | 3 — Enrollment & Attendance | ❌ **Planned** | Batch enrollment, payment tracking, attendance marking, realtime |
 | 4 — Reporting | ❌ **Planned** | Certificates, client portal, reports |
 
@@ -244,11 +250,7 @@ companies ──► contacts
 ## Tech Debt Quick Reference
 
 - No test framework, no linting, no typechecking, no CI/CD
-- `manage/programs.vue` and `manage/enrollments.vue` are UI shells (hardcoded data)
-- 3 `console.log` statements in production code (`AppFooter.vue:106`, `manage/users.vue:62,66`)
+- `manage/enrollments.vue` is a UI shell (hardcoded data)
 - No `.env.example` file
-- `manage/venues/index.vue` `hasWorkshop()` always returns `false`
-- `manage/workshops/index.vue` `dayCount` hardcoded to `3`
 - `manage/settings.vue` uses hardcoded "Admin User" / "admin@example.com"
-- `manage/users.vue` edit/delete buttons only call `console.log`
 - Chart.js + vue-chartjs installed but unused
